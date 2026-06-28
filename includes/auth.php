@@ -30,7 +30,7 @@ function auth_check(): bool {
 
 function auth_require(): void {
     if (!auth_check()) {
-        header('Location: /login.php');
+        header('Location: login.php');
         exit;
     }
 }

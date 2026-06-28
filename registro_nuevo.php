@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         auth_start_session();
         $_SESSION['flash'] = "Registro de {$nombre} {$apellido} creado correctamente.";
-        header('Location: /index.php');
+        header('Location: index.php');
         exit;
     }
 }
@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agregar registro — IO</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="/assets/css/app.css">
+  <link rel="stylesheet" href="assets/css/app.css">
 </head>
 <body>
 
@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     <?php endif; ?>
 
-    <form method="POST" action="/registro_nuevo.php" enctype="multipart/form-data">
+    <form method="POST" action="registro_nuevo.php" enctype="multipart/form-data">
 
       <div class="mb-3">
         <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
@@ -165,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <div class="d-flex gap-2">
         <button type="submit" class="btn btn-io-blue">Guardar</button>
-        <a href="/index.php" class="btn btn-outline-secondary">Cancelar</a>
+        <a href="index.php" class="btn btn-outline-secondary">Cancelar</a>
       </div>
 
     </form>

@@ -97,7 +97,7 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Llegadas — IO</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="/assets/css/app.css">
+  <link rel="stylesheet" href="assets/css/app.css">
 </head>
 <body>
 
@@ -117,12 +117,12 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
   <!-- Heading row -->
   <div class="io-page-header">
     <h1>Llegadas de hoy</h1>
-    <a href="/registro_nuevo.php" class="btn btn-io-blue btn-sm">Agregar registro</a>
+    <a href="registro_nuevo.php" class="btn btn-io-blue btn-sm">Agregar registro</a>
   </div>
 
   <!-- Search card -->
   <div class="io-card">
-    <form method="GET" action="/index.php" class="d-flex align-items-center gap-2">
+    <form method="GET" action="index.php" class="d-flex align-items-center gap-2">
       <label for="search" class="form-label mb-0 text-nowrap">Buscar por nombre o apellido del huesped</label>
       <input type="text" id="search" name="search" class="form-control form-control-sm"
              value="<?= htmlspecialchars($search) ?>" placeholder="Nombre o apellido...">
@@ -130,7 +130,7 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
       <?php if ($direction): ?><input type="hidden" name="direction" value="<?= htmlspecialchars(strtolower($direction)) ?>"><?php endif; ?>
       <button type="submit" class="btn btn-io-blue btn-sm text-nowrap">Buscar</button>
       <?php if ($search): ?>
-        <a href="/index.php" class="btn btn-outline-secondary btn-sm text-nowrap">Limpiar</a>
+        <a href="index.php" class="btn btn-outline-secondary btn-sm text-nowrap">Limpiar</a>
       <?php endif; ?>
     </form>
   </div>
@@ -178,7 +178,7 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
               <?php endif; ?>
             </td>
             <td>
-              <a href="/expediente.php?id=<?= (int)$row['id'] ?>"
+              <a href="expediente.php?id=<?= (int)$row['id'] ?>"
                  class="btn btn-io-blue btn-sm">Ver</a>
             </td>
           </tr>
