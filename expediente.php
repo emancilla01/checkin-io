@@ -22,6 +22,17 @@ $docs = $pdo->prepare("SELECT * FROM documentos WHERE expediente_id = ? ORDER BY
 $docs->execute([$id]);
 $documentos = $docs->fetchAll();
 
+$merged_doc    = null;
+$unmerged_docs = [];
+foreach ($documentos as $d) {
+    if ($d['is_merged']) {
+        $merged_doc = $d;
+    } else {
+        $unmerged_docs[] = $d;
+    }
+}
+$has_merged = $merged_doc !== null;
+
 // Identify identificacion type
 $id_path = $exp['identificacion_path'] ?? '';
 $id_ext  = strtolower(pathinfo($id_path, PATHINFO_EXTENSION));
@@ -69,6 +80,12 @@ function dash(string $val): string {
     </div>
     <div class="d-flex gap-2">
       <a href="expediente_editar.php?id=<?= $id ?>" class="btn btn-outline-secondary btn-sm">Editar</a>
+      <?php if ($has_merged): ?>
+        <button class="btn btn-outline-secondary btn-sm" disabled
+                title="Este expediente ya tiene un documento combinado.">Combinar</button>
+      <?php else: ?>
+        <a href="merge.php?id=<?= $id ?>" class="btn btn-outline-secondary btn-sm">Combinar</a>
+      <?php endif; ?>
       <form method="POST" action="expediente_delete.php" class="d-inline"
             onsubmit="return confirm('¿Eliminar este expediente? Esta accion no se puede deshacer.');">
         <input type="hidden" name="id" value="<?= $id ?>">
@@ -104,21 +121,47 @@ function dash(string $val): string {
 
         <hr>
 
-        <!-- Document list -->
-        <?php if (empty($documentos)): ?>
-          <p class="text-muted mb-0" style="font-size:0.9rem;">Documento pendiente de carga.</p>
-        <?php else: ?>
+        <!-- Merged document — inline preview -->
+        <?php if ($merged_doc !== null): ?>
+          <div class="mb-3">
+            <iframe src="<?= htmlspecialchars($merged_doc['path']) ?>" width="100%" height="400"
+                    class="border rounded mb-2" style="min-height:400px;"></iframe>
+            <div class="d-flex align-items-center gap-2">
+              <a href="<?= htmlspecialchars($merged_doc['path']) ?>" target="_blank"
+                 class="btn btn-outline-secondary btn-sm">Abrir</a>
+              <form method="POST" action="documento_delete.php" class="d-inline"
+                    onsubmit="return confirm('¿Estas seguro de eliminar este documento?');">
+                <input type="hidden" name="doc_id" value="<?= (int)$merged_doc['id'] ?>">
+                <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+              </form>
+            </div>
+          </div>
+        <?php endif; ?>
+
+        <!-- Additional (unmerged) documents -->
+        <?php if (!empty($unmerged_docs)): ?>
           <ul class="list-unstyled mb-0">
-            <?php foreach ($documentos as $doc): ?>
+            <?php foreach ($unmerged_docs as $doc): ?>
             <li class="d-flex align-items-center justify-content-between py-1 border-bottom">
-              <span class="text-truncate me-2" style="font-size:0.875rem; max-width:200px;">
+              <span class="text-truncate me-2" style="font-size:0.875rem; max-width:160px;">
                 <?= htmlspecialchars($doc['original_name'] ?? basename($doc['path'])) ?>
               </span>
-              <a href="<?= htmlspecialchars($doc['path']) ?>" target="_blank"
-                 class="btn btn-outline-secondary btn-sm flex-shrink-0">Abrir</a>
+              <div class="d-flex gap-1 flex-shrink-0">
+                <a href="<?= htmlspecialchars($doc['path']) ?>" target="_blank"
+                   class="btn btn-outline-secondary btn-sm">Abrir</a>
+                <form method="POST" action="documento_delete.php"
+                      onsubmit="return confirm('¿Estas seguro de eliminar este documento?');">
+                  <input type="hidden" name="doc_id" value="<?= (int)$doc['id'] ?>">
+                  <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+                </form>
+              </div>
             </li>
             <?php endforeach; ?>
           </ul>
+        <?php endif; ?>
+
+        <?php if ($merged_doc === null && empty($unmerged_docs)): ?>
+          <p class="text-muted mb-0" style="font-size:0.9rem;">Documento pendiente de carga.</p>
         <?php endif; ?>
       </div>
     </div>
@@ -131,25 +174,26 @@ function dash(string $val): string {
         <?php if (empty($id_path)): ?>
           <p class="text-muted mb-0" style="font-size:0.9rem;">Identificacion pendiente de carga.</p>
 
-        <?php elseif ($id_is_image): ?>
-          <img src="<?= htmlspecialchars($id_path) ?>" alt="Identificacion"
-               class="img-fluid mb-3 rounded" style="max-height:300px; object-fit:contain;">
-          <div>
-            <a href="<?= htmlspecialchars($id_path) ?>" target="_blank"
-               class="btn btn-outline-secondary btn-sm">Abrir identificacion</a>
-          </div>
-
-        <?php elseif ($id_is_pdf): ?>
-          <iframe src="<?= htmlspecialchars($id_path) ?>" width="100%" height="400"
-                  class="border rounded mb-3" style="min-height:400px;"></iframe>
-          <div>
-            <a href="<?= htmlspecialchars($id_path) ?>" target="_blank"
-               class="btn btn-outline-secondary btn-sm">Abrir identificacion</a>
-          </div>
-
         <?php else: ?>
-          <a href="<?= htmlspecialchars($id_path) ?>" target="_blank"
-             class="btn btn-outline-secondary btn-sm">Abrir identificacion</a>
+
+          <?php if ($id_is_image): ?>
+            <img src="<?= htmlspecialchars($id_path) ?>" alt="Identificacion"
+                 class="img-fluid mb-3 rounded" style="max-height:300px; object-fit:contain;">
+          <?php elseif ($id_is_pdf): ?>
+            <iframe src="<?= htmlspecialchars($id_path) ?>" width="100%" height="400"
+                    class="border rounded mb-3" style="min-height:400px;"></iframe>
+          <?php endif; ?>
+
+          <div class="d-flex gap-2 align-items-center">
+            <a href="<?= htmlspecialchars($id_path) ?>" target="_blank"
+               class="btn btn-outline-secondary btn-sm">Abrir identificacion</a>
+            <form method="POST" action="identificacion_delete.php" class="d-inline"
+                  onsubmit="return confirm('¿Estas seguro de eliminar la identificacion?');">
+              <input type="hidden" name="expediente_id" value="<?= $id ?>">
+              <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+            </form>
+          </div>
+
         <?php endif; ?>
 
       </div>

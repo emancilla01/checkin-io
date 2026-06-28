@@ -197,6 +197,14 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
                       <a class="dropdown-item" href="expediente_editar.php?id=<?= (int)$row['id'] ?>">Editar</a>
                     </li>
                     <li>
+                      <?php if ($row['doc_id'] !== null): ?>
+                        <span class="dropdown-item text-muted" style="cursor:default;"
+                              title="Este expediente ya tiene un documento combinado.">Combinar</span>
+                      <?php else: ?>
+                        <a class="dropdown-item" href="merge.php?id=<?= (int)$row['id'] ?>">Combinar</a>
+                      <?php endif; ?>
+                    </li>
+                    <li>
                       <form method="POST" action="expediente_delete.php"
                             onsubmit="return confirm('¿Estas seguro de eliminar este registro?');">
                         <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">

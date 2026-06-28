@@ -23,7 +23,9 @@ body {
 }
 .io-navbar .nav-link.active {
     font-weight: 600;
+    color: var(--io-orange) !important;
     text-decoration: underline;
+    text-decoration-color: var(--io-orange);
 }
 
 /* Page heading row */

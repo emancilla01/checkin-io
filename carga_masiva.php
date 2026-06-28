@@ -152,13 +152,22 @@ auth_start_session();
   const resultsTbody     = document.getElementById('results-tbody');
   const saveBar          = document.getElementById('save-bar');
   const saveResult       = document.getElementById('save-result');
-  const modalEl          = document.getElementById('modal-revisar');
-  const bsModal          = new bootstrap.Modal(modalEl);
+  const modalEl = document.getElementById('modal-revisar');
+  let bsModal   = null;  // lazy — created on first open to avoid timing issues
+  function getModal() {
+    if (!bsModal) bsModal = new bootstrap.Modal(modalEl);
+    return bsModal;
+  }
 
-  // Enable Procesar when files selected
-  batchInput.addEventListener('change', function () {
-    btnProcesar.disabled = !batchInput.files || batchInput.files.length === 0;
-  });
+  // Enable "Procesar registros" by watching the upload box for the has-file class.
+  // upload-boxes.js adds has-file on both click-to-browse and drag-and-drop,
+  // so this works regardless of which event path was taken.
+  const uploadBox = document.querySelector('[data-upload-input="#batch_input"]');
+  if (uploadBox) {
+    new MutationObserver(function () {
+      btnProcesar.disabled = !uploadBox.classList.contains('has-file');
+    }).observe(uploadBox, { attributes: true, attributeFilter: ['class'] });
+  }
 
   // ── Process ───────────────────────────────────────────────────────────────
   btnProcesar.addEventListener('click', async function () {
@@ -309,7 +318,7 @@ auth_start_session();
     document.getElementById('modal-fecha').value    = r.fecha_llegada;
     document.getElementById('modal-crs').value      = r.crs_no;
     document.getElementById('modal-error').style.display = 'none';
-    bsModal.show();
+    getModal().show();
   });
 
   document.getElementById('modal-guardar').addEventListener('click', function () {
@@ -340,7 +349,7 @@ auth_start_session();
     }
 
     renderRow(idx);
-    bsModal.hide();
+    getModal().hide();
   });
 
   // ── Save ──────────────────────────────────────────────────────────────────
