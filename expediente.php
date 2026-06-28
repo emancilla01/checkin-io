@@ -44,9 +44,6 @@ auth_start_session();
 $flash = $_SESSION['flash'] ?? null;
 unset($_SESSION['flash']);
 
-function dash(string $val): string {
-    return $val !== '' ? htmlspecialchars($val) : '<span class="text-muted">—</span>';
-}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -77,6 +74,12 @@ function dash(string $val): string {
       <p class="text-muted mb-0" style="font-size:0.9rem;">
         Fecha de llegada: <?= htmlspecialchars($exp['fecha_llegada']) ?>
       </p>
+      <p class="mb-0 mt-1" style="font-size:0.825rem; color:var(--io-navy); flex-wrap:wrap; display:flex; gap:1.25rem;">
+        <span><span class="text-muted">Apellido:</span> <?= htmlspecialchars($exp['apellido']) ?></span>
+        <span><span class="text-muted">Nombre:</span> <?= htmlspecialchars($exp['nombre']) ?></span>
+        <span><span class="text-muted">CRS No:</span> <?= !empty($exp['crs_no']) ? htmlspecialchars($exp['crs_no']) : '<span class="text-muted">—</span>' ?></span>
+        <span><span class="text-muted">Habitacion:</span> <?= !empty($exp['habitacion']) ? htmlspecialchars($exp['habitacion']) : '<span class="text-muted">—</span>' ?></span>
+      </p>
     </div>
     <div class="d-flex gap-2">
       <a href="expediente_editar.php?id=<?= $id ?>" class="btn btn-outline-secondary btn-sm">Editar</a>
@@ -100,26 +103,6 @@ function dash(string $val): string {
     <div class="col-12 col-md-6">
       <div class="io-card h-100">
         <h6 class="fw-semibold mb-3" style="color:var(--io-navy);">Documento</h6>
-
-        <!-- Info grid -->
-        <dl class="row mb-3" style="font-size:0.9rem;">
-          <dt class="col-5 text-muted fw-normal">Apellido</dt>
-          <dd class="col-7"><?= dash($exp['apellido']) ?></dd>
-
-          <dt class="col-5 text-muted fw-normal">Nombre</dt>
-          <dd class="col-7"><?= dash($exp['nombre']) ?></dd>
-
-          <dt class="col-5 text-muted fw-normal">Fecha de llegada</dt>
-          <dd class="col-7"><?= dash($exp['fecha_llegada']) ?></dd>
-
-          <dt class="col-5 text-muted fw-normal">CRS No</dt>
-          <dd class="col-7"><?= dash($exp['crs_no'] ?? '') ?></dd>
-
-          <dt class="col-5 text-muted fw-normal">Habitacion</dt>
-          <dd class="col-7"><?= dash($exp['habitacion'] ?? '') ?></dd>
-        </dl>
-
-        <hr>
 
         <!-- Merged document — inline preview -->
         <?php if ($merged_doc !== null): ?>
