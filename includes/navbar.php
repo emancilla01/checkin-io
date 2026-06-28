@@ -6,7 +6,7 @@ $active_nav = $active_nav ?? '';
   <a class="navbar-brand fw-bold" href="index.php">IO</a>
   <div class="d-flex gap-3">
     <a class="nav-link <?= $active_nav === 'llegadas'       ? 'active' : '' ?>" href="index.php">Llegadas</a>
-    <a class="nav-link <?= $active_nav === 'base-de-datos'  ? 'active' : '' ?>" href="#">Base de datos</a>
+    <a class="nav-link <?= $active_nav === 'base-de-datos'  ? 'active' : '' ?>" href="base_datos.php">Base de datos</a>
     <a class="nav-link <?= $active_nav === 'registro-nuevo' ? 'active' : '' ?>" href="registro_nuevo.php">Agregar registro</a>
     <a class="nav-link" href="logout.php">Cerrar sesion</a>
   </div>

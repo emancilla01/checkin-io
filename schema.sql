@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS expedientes (
     apellido            VARCHAR(255)    NOT NULL,
     fecha_llegada       DATE            NOT NULL,
     identificacion_path VARCHAR(500)    NULL,
+    crs_no              VARCHAR(50)     NULL,
+    habitacion          VARCHAR(20)     NULL,
     created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id)

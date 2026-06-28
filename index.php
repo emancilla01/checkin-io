@@ -25,7 +25,9 @@ $where = "WHERE DATE(e.fecha_llegada) = CURDATE()";
 $params = [];
 
 if ($search !== '') {
-    $where .= " AND (e.nombre LIKE ? OR e.apellido LIKE ?)";
+    $where .= " AND (e.nombre LIKE ? OR e.apellido LIKE ? OR e.crs_no LIKE ? OR e.habitacion LIKE ?)";
+    $params[] = "%$search%";
+    $params[] = "%$search%";
     $params[] = "%$search%";
     $params[] = "%$search%";
 }
@@ -44,6 +46,8 @@ $sql = "
         e.nombre,
         e.apellido,
         e.fecha_llegada,
+        e.crs_no,
+        e.habitacion,
         e.identificacion_path,
         d.id        AS doc_id,
         d.signed_at AS doc_signed_at
@@ -144,10 +148,12 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th><?= sort_link('nombre',   'Nombre',   $sort, $direction, $search) ?></th>
             <th><?= sort_link('apellido', 'Apellido', $sort, $direction, $search) ?></th>
+            <th><?= sort_link('nombre',   'Nombre',   $sort, $direction, $search) ?></th>
             <th>Fecha de llegada</th>
-            <th>Estado del documento</th>
+            <th>CRS No</th>
+            <th>Habitacion</th>
+            <th>Estado del registro</th>
             <th>Estado de la identificacion</th>
             <th>Acciones</th>
           </tr>
@@ -158,9 +164,11 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
             $id_ok  = !empty($row['identificacion_path']);
           ?>
           <tr>
-            <td><?= htmlspecialchars($row['nombre']) ?></td>
             <td><?= htmlspecialchars($row['apellido']) ?></td>
+            <td><?= htmlspecialchars($row['nombre']) ?></td>
             <td><?= htmlspecialchars($row['fecha_llegada']) ?></td>
+            <td class="text-muted"><?= !empty($row['crs_no'])    ? htmlspecialchars($row['crs_no'])    : '-' ?></td>
+            <td class="text-muted"><?= !empty($row['habitacion']) ? htmlspecialchars($row['habitacion']) : '-' ?></td>
             <td>
               <?php if ($status === 'Firmado'): ?>
                 <span class="badge bg-success">Firmado</span>
