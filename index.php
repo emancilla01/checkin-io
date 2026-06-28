@@ -57,18 +57,37 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
+// --- Flash message ---
+auth_start_session();
+$flash = $_SESSION['flash'] ?? null;
+unset($_SESSION['flash']);
+
 // --- Document status helper ---
 function doc_status(array $row): string {
-    if ($row['doc_id'] === null)      return 'Faltante';
-    if ($row['doc_signed_at'] !== null) return 'Firmado';
+    if ($row['doc_id'] === null)         return 'Faltante';
+    if ($row['doc_signed_at'] !== null)  return 'Firmado';
     return 'Pendiente';
 }
 
-// --- Build sort link helper ---
+// --- Sort link helper ---
 function sort_link(string $col, string $label, ?string $current_sort, string $current_dir, string $search): string {
     $new_dir = ($current_sort === $col && $current_dir === 'ASC') ? 'desc' : 'asc';
     $q = http_build_query(['sort' => $col, 'direction' => $new_dir, 'search' => $search, 'page' => 1]);
-    return "<a href=\"?$q\">$label</a>";
+    $arrow = '';
+    if ($current_sort === $col) {
+        $arrow = $current_dir === 'ASC' ? ' ↑' : ' ↓';
+    }
+    return '<a href="?' . $q . '" class="text-decoration-none text-dark fw-semibold">' . $label . $arrow . '</a>';
+}
+
+// --- Pagination query string helper ---
+function page_qs(int $p, string $search, ?string $sort, string $direction): string {
+    return http_build_query([
+        'search'    => $search,
+        'sort'      => $sort ?? '',
+        'direction' => strtolower($direction),
+        'page'      => $p,
+    ]);
 }
 ?>
 <!DOCTYPE html>
@@ -77,72 +96,124 @@ function sort_link(string $col, string $label, ?string $current_sort, string $cu
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Llegadas — IO</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/assets/css/app.css">
 </head>
 <body>
 
-<h1>Llegadas de hoy</h1>
+<?php $active_nav = 'llegadas'; include __DIR__ . '/includes/navbar.php'; ?>
 
-<form method="GET" action="/index.php">
-  <input type="text" name="search" value="<?= htmlspecialchars($search) ?>"
-         placeholder="Buscar por nombre o apellido del huesped">
-  <?php if ($sort):      ?><input type="hidden" name="sort"      value="<?= htmlspecialchars($sort) ?>"><?php endif; ?>
-  <?php if ($direction): ?><input type="hidden" name="direction" value="<?= htmlspecialchars(strtolower($direction)) ?>"><?php endif; ?>
-  <button type="submit">Buscar</button>
-  <?php if ($search): ?>
-    <a href="/index.php">Limpiar</a>
+<!-- Page content -->
+<div class="container-lg py-4">
+
+  <!-- Flash message -->
+  <?php if ($flash): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <?= htmlspecialchars($flash) ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
   <?php endif; ?>
-</form>
 
-<?php if (empty($rows)): ?>
-  <p>No hay llegadas registradas hoy.</p>
-<?php else: ?>
-
-<table border="1" cellpadding="6" cellspacing="0">
-  <thead>
-    <tr>
-      <th><?= sort_link('nombre',   'Nombre',   $sort, $direction, $search) ?></th>
-      <th><?= sort_link('apellido', 'Apellido', $sort, $direction, $search) ?></th>
-      <th>Fecha de llegada</th>
-      <th>Estado del documento</th>
-      <th>Estado de la identificacion</th>
-      <th>Acciones</th>
-    </tr>
-  </thead>
-  <tbody>
-    <?php foreach ($rows as $row): ?>
-    <tr>
-      <td><?= htmlspecialchars($row['nombre']) ?></td>
-      <td><?= htmlspecialchars($row['apellido']) ?></td>
-      <td><?= htmlspecialchars($row['fecha_llegada']) ?></td>
-      <td><?= doc_status($row) ?></td>
-      <td><?= !empty($row['identificacion_path']) ? 'Ok' : 'Faltante' ?></td>
-      <td><a href="/expediente.php?id=<?= (int)$row['id'] ?>">Ver</a></td>
-    </tr>
-    <?php endforeach; ?>
-  </tbody>
-</table>
-
-<?php if ($total_pages > 1): ?>
-  <div>
-    <?php if ($page > 1): ?>
-      <a href="?<?= http_build_query(['search' => $search, 'sort' => $sort, 'direction' => strtolower($direction), 'page' => $page - 1]) ?>">Anterior</a>
-    <?php endif; ?>
-
-    <?php for ($p = 1; $p <= $total_pages; $p++): ?>
-      <?php if ($p === $page): ?>
-        <strong><?= $p ?></strong>
-      <?php else: ?>
-        <a href="?<?= http_build_query(['search' => $search, 'sort' => $sort, 'direction' => strtolower($direction), 'page' => $p]) ?>"><?= $p ?></a>
-      <?php endif; ?>
-    <?php endfor; ?>
-
-    <?php if ($page < $total_pages): ?>
-      <a href="?<?= http_build_query(['search' => $search, 'sort' => $sort, 'direction' => strtolower($direction), 'page' => $page + 1]) ?>">Siguiente</a>
-    <?php endif; ?>
+  <!-- Heading row -->
+  <div class="io-page-header">
+    <h1>Llegadas de hoy</h1>
+    <a href="/registro_nuevo.php" class="btn btn-io-blue btn-sm">Agregar registro</a>
   </div>
-<?php endif; ?>
 
-<?php endif; ?>
+  <!-- Search card -->
+  <div class="io-card">
+    <form method="GET" action="/index.php" class="d-flex align-items-center gap-2">
+      <label for="search" class="form-label mb-0 text-nowrap">Buscar por nombre o apellido del huesped</label>
+      <input type="text" id="search" name="search" class="form-control form-control-sm"
+             value="<?= htmlspecialchars($search) ?>" placeholder="Nombre o apellido...">
+      <?php if ($sort):      ?><input type="hidden" name="sort"      value="<?= htmlspecialchars($sort) ?>"><?php endif; ?>
+      <?php if ($direction): ?><input type="hidden" name="direction" value="<?= htmlspecialchars(strtolower($direction)) ?>"><?php endif; ?>
+      <button type="submit" class="btn btn-io-blue btn-sm text-nowrap">Buscar</button>
+      <?php if ($search): ?>
+        <a href="/index.php" class="btn btn-outline-secondary btn-sm text-nowrap">Limpiar</a>
+      <?php endif; ?>
+    </form>
+  </div>
 
+  <!-- Table card -->
+  <div class="io-card p-0">
+    <?php if (empty($rows)): ?>
+      <p class="p-4 mb-0 text-muted">No hay llegadas registradas hoy.</p>
+    <?php else: ?>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th><?= sort_link('nombre',   'Nombre',   $sort, $direction, $search) ?></th>
+            <th><?= sort_link('apellido', 'Apellido', $sort, $direction, $search) ?></th>
+            <th>Fecha de llegada</th>
+            <th>Estado del documento</th>
+            <th>Estado de la identificacion</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($rows as $row):
+            $status = doc_status($row);
+            $id_ok  = !empty($row['identificacion_path']);
+          ?>
+          <tr>
+            <td><?= htmlspecialchars($row['nombre']) ?></td>
+            <td><?= htmlspecialchars($row['apellido']) ?></td>
+            <td><?= htmlspecialchars($row['fecha_llegada']) ?></td>
+            <td>
+              <?php if ($status === 'Firmado'): ?>
+                <span class="badge bg-success">Firmado</span>
+              <?php elseif ($status === 'Pendiente'): ?>
+                <span class="badge bg-warning text-dark">Pendiente</span>
+              <?php else: ?>
+                <span class="badge bg-danger">Faltante</span>
+              <?php endif; ?>
+            </td>
+            <td>
+              <?php if ($id_ok): ?>
+                <span class="badge bg-success">Ok</span>
+              <?php else: ?>
+                <span class="badge bg-danger">Faltante</span>
+              <?php endif; ?>
+            </td>
+            <td>
+              <a href="/expediente.php?id=<?= (int)$row['id'] ?>"
+                 class="btn btn-io-blue btn-sm">Ver</a>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <?php if ($total_pages > 1): ?>
+    <div class="d-flex justify-content-center py-3">
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+            <a class="page-link" href="?<?= page_qs($page - 1, $search, $sort, $direction) ?>">Anterior</a>
+          </li>
+          <?php for ($p = 1; $p <= $total_pages; $p++): ?>
+          <li class="page-item <?= $p === $page ? 'active' : '' ?>">
+            <a class="page-link" href="?<?= page_qs($p, $search, $sort, $direction) ?>"><?= $p ?></a>
+          </li>
+          <?php endfor; ?>
+          <li class="page-item <?= $page >= $total_pages ? 'disabled' : '' ?>">
+            <a class="page-link" href="?<?= page_qs($page + 1, $search, $sort, $direction) ?>">Siguiente</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+    <?php endif; ?>
+
+    <?php endif; ?>
+  </div><!-- /table card -->
+
+</div><!-- /container -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<?php include __DIR__ . '/includes/footer.php'; ?>
 </body>
 </html>

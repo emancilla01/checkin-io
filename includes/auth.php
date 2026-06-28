@@ -7,7 +7,7 @@ function auth_start_session(): void {
 }
 
 function auth_attempt(PDO $pdo, string $username, string $password): bool {
-    $stmt = $pdo->prepare("SELECT id, username, password_hash, role FROM users WHERE username = ?");
+    $stmt = $pdo->prepare("SELECT id, username, nombre, password_hash, role FROM users WHERE username = ?");
     $stmt->execute([$username]);
     $user = $stmt->fetch();
 
@@ -18,6 +18,7 @@ function auth_attempt(PDO $pdo, string $username, string $password): bool {
     auth_start_session();
     $_SESSION['user_id']   = $user['id'];
     $_SESSION['username']  = $user['username'];
+    $_SESSION['nombre']    = $user['nombre'];
     $_SESSION['role']      = $user['role'];
     return true;
 }

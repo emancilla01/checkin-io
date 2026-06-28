@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS users (
     id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     username      VARCHAR(100)    NOT NULL UNIQUE,
+    nombre        VARCHAR(255)    NOT NULL,
     password_hash VARCHAR(255)    NOT NULL,
     role          ENUM('admin','editor','viewer') NOT NULL DEFAULT 'viewer',
     created_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
