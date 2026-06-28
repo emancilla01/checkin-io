@@ -20,7 +20,7 @@ class RegisterCardTextParser
     private const LABEL_ALIASES = [
         'apellido'      => ['apellido', 'last name', 'lastname', 'surname'],
         'nombre'        => ['nombre', 'first name', 'firstname', 'given name'],
-        'fecha_llegada' => ['llegada', 'arrival date', 'arr. date', 'arr date', 'fecha llegada', 'fecha de llegada'],
+        'fecha_llegada' => ['llegada', 'arrival', 'arrival date', 'arr. date', 'arr date', 'fecha llegada', 'fecha de llegada'],
         'crs_no'        => ['crs no.', 'crs no', 'crs number', 'crs#'],
     ];
 
@@ -75,7 +75,8 @@ class RegisterCardTextParser
                 if ($result[$field] !== '') continue; // already found
 
                 foreach ($aliases as $alias) {
-                    $pattern = '/(?:^|\s)' . preg_quote($alias, '/') . '\s*[:.][ \t]*(.+)/i';
+                    // Delimiter after the label may be ":", ".", or just whitespace (some cards omit it)
+                    $pattern = '/(?:^|\s)' . preg_quote($alias, '/') . '\s*(?:[:.]\s*|\s+)(.+)/i';
                     if (preg_match($pattern, $line, $m)) {
                         $val = $this->trimAtNextLabel(trim($m[1]));
                         if ($val !== '') {
