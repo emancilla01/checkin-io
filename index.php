@@ -186,8 +186,26 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
               <?php endif; ?>
             </td>
             <td>
-              <a href="expediente.php?id=<?= (int)$row['id'] ?>"
-                 class="btn btn-io-blue btn-sm">Ver</a>
+              <div class="d-flex gap-1">
+                <a href="expediente.php?id=<?= (int)$row['id'] ?>"
+                   class="btn btn-io-blue btn-sm">Ver</a>
+                <div class="dropdown">
+                  <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                          data-bs-toggle="dropdown" aria-expanded="false">Mas</button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                      <a class="dropdown-item" href="expediente_editar.php?id=<?= (int)$row['id'] ?>">Editar</a>
+                    </li>
+                    <li>
+                      <form method="POST" action="expediente_delete.php"
+                            onsubmit="return confirm('¿Estas seguro de eliminar este registro?');">
+                        <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                        <button type="submit" class="dropdown-item text-danger">Eliminar</button>
+                      </form>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </td>
           </tr>
           <?php endforeach; ?>

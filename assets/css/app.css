@@ -49,6 +49,40 @@ body {
     margin-bottom: 1.25rem;
 }
 
+/* Upload boxes */
+.io-upload-box {
+    border: 2px dashed #ced4da;
+    border-radius: 6px;
+    padding: 1.25rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+    background: #fafafa;
+    color: #6c757d;
+    font-size: 0.875rem;
+    user-select: none;
+}
+.io-upload-box:hover,
+.io-upload-box:focus {
+    border-color: var(--io-blue);
+    outline: none;
+    background: #f0f4ff;
+}
+.io-upload-box.drag-over {
+    border-color: var(--io-blue);
+    background: #e8efff;
+}
+.io-upload-box.has-file {
+    border-color: var(--io-navy);
+    color: var(--io-navy);
+    font-weight: 500;
+}
+
+/* Keep Acciones dropdown from clipping inside the table card */
+.io-card .dropdown-menu {
+    z-index: 1055;
+}
+
 /* Footer */
 .io-footer {
     text-align: right;
