@@ -51,7 +51,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     input.files = dt.files;
                 } catch (_) {}
             }
-            updateLabel();
+            // Dispatch 'change' so external listeners (e.g. button enablement) are notified.
+            // The 'change' listener below will call updateLabel().
+            input.dispatchEvent(new Event('change'));
         });
 
         input.addEventListener('change', updateLabel);

@@ -78,9 +78,10 @@ body {
     font-weight: 500;
 }
 
-/* Keep Acciones dropdown from clipping inside the table card */
-.io-card .dropdown-menu {
-    z-index: 1055;
+/* Bootstrap's .table-responsive sets overflow:auto which clips absolutely-positioned
+   dropdowns regardless of z-index. Override to visible so dropdowns escape the container. */
+.io-card .table-responsive {
+    overflow: visible;
 }
 
 /* Footer */
