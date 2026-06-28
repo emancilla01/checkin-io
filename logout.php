@@ -1,3 +1,7 @@
 <?php
+require_once __DIR__ . '/includes/auth.php';
 
-// Logout — destroys session and redirects to login
+auth_logout();
+
+header('Location: /login.php');
+exit;

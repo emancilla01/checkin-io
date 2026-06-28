@@ -1,3 +1,63 @@
 <?php
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/auth.php';
 
-// Login page — staff authentication form
+auth_start_session();
+
+if (auth_check()) {
+    header('Location: /index.php');
+    exit;
+}
+
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    if (auth_attempt($pdo, $username, $password)) {
+        header('Location: /index.php');
+        exit;
+    }
+
+    $error = 'Usuario o contraseña incorrectos.';
+}
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar sesión — IO</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <style>
+    body { background-color: #f4efe6; }
+    .login-card { max-width: 380px; margin: 100px auto; }
+  </style>
+</head>
+<body>
+  <div class="login-card card shadow-sm p-4">
+    <h4 class="mb-4 text-center" style="color:#2f5d50;">IO — Hotel Check-In</h4>
+
+    <?php if ($error): ?>
+      <div class="alert alert-danger py-2"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
+
+    <form method="POST" action="/login.php">
+      <div class="mb-3">
+        <label for="username" class="form-label">Usuario</label>
+        <input type="text" id="username" name="username" class="form-control"
+               autocomplete="username" required autofocus>
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Contraseña</label>
+        <input type="password" id="password" name="password" class="form-control"
+               autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn w-100 text-white" style="background-color:#2f5d50;">
+        Iniciar sesión
+      </button>
+    </form>
+  </div>
+</body>
+</html>
