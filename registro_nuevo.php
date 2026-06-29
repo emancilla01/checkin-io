@@ -115,7 +115,7 @@ if ($prefill !== null) {
     $old = [
         'nombre'        => $prefill['nombre']        ?? '',
         'apellido'      => $prefill['apellido']       ?? '',
-        'fecha_llegada' => ($prefill['fecha_llegada'] ?? '') !== '' ? $prefill['fecha_llegada'] : date('Y-m-d'),
+        'fecha_llegada' => ($prefill['fecha_llegada'] ?? '') ?: date('Y-m-d'),
         'crs_no'        => $prefill['crs_no']         ?? '',
     ];
     $ocr_done = true;
