@@ -189,10 +189,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
 
       <div class="mb-3">
-        <label for="documento" class="form-label">Agregar documento PDF</label>
-        <input type="file" id="documento" name="documento" class="form-control"
-               accept="application/pdf">
-        <div class="form-text">
+        <label class="form-label">Agregar documento PDF</label>
+        <input type="file" id="documento" name="documento"
+               accept="application/pdf" style="display:none;">
+        <div class="io-upload-box"
+             data-upload-box
+             data-upload-input="#documento"
+             tabindex="0" role="button" aria-label="Subir documento PDF">
+          <span data-upload-filename>Arrastra el archivo aqui o haz clic para seleccionar</span>
+        </div>
+        <div class="form-text mt-1">
           <?php if ($doc_count === 0): ?>
             No hay documentos adjuntos aun. Subir uno lo agregara al expediente.
           <?php else: ?>
@@ -203,16 +209,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
 
       <div class="mb-4">
-        <label for="identificacion" class="form-label">Reemplazar identificacion</label>
-        <input type="file" id="identificacion" name="identificacion" class="form-control"
-               accept="application/pdf,image/*">
-        <div class="form-text">
-          <?php if (!empty($exp['identificacion_path'])): ?>
-            Ya existe una identificacion guardada. Subir un archivo la reemplazara.
-          <?php else: ?>
-            No hay identificacion guardada aun. Subir un archivo la agregara.
-          <?php endif; ?>
+        <label class="form-label">Agregar identificacion</label>
+        <input type="file" id="identificacion" name="identificacion"
+               accept="application/pdf,image/*" style="display:none;">
+        <div class="io-upload-box"
+             data-upload-box
+             data-upload-input="#identificacion"
+             tabindex="0" role="button" aria-label="Subir identificacion">
+          <span data-upload-filename>Arrastra el archivo aqui o haz clic para seleccionar</span>
         </div>
+        <div class="form-text mt-1">Opcional. PDF o imagen.</div>
       </div>
 
       <div class="d-flex gap-2">
@@ -226,6 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/upload-boxes.js"></script>
 <?php include __DIR__ . '/includes/footer.php'; ?>
 </body>
 </html>

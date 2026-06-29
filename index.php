@@ -169,7 +169,15 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
             <td><?= htmlspecialchars($row['nombre']) ?></td>
             <td><?= htmlspecialchars($row['fecha_llegada']) ?></td>
             <td class="text-muted"><?= !empty($row['crs_no'])    ? htmlspecialchars($row['crs_no'])    : '-' ?></td>
-            <td class="text-muted"><?= !empty($row['habitacion']) ? htmlspecialchars($row['habitacion']) : '-' ?></td>
+            <td>
+              <input type="text"
+                     class="form-control form-control-sm hab-inline"
+                     data-id="<?= (int)$row['id'] ?>"
+                     value="<?= htmlspecialchars($row['habitacion'] ?? '') ?>"
+                     placeholder="—"
+                     maxlength="20"
+                     style="width:80px;">
+            </td>
             <td>
               <?php if ($status === 'Firmado'): ?>
                 <span class="badge bg-success">Firmado</span>
@@ -249,6 +257,44 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
 </div><!-- /container -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/upload-boxes.js"></script>
+<script>
+document.querySelectorAll('.hab-inline').forEach(function (input) {
+    var lastSaved = input.value;
+
+    function save() {
+        var val = input.value.trim();
+        if (val === lastSaved) return;
+
+        var fd = new FormData();
+        fd.append('id', input.dataset.id);
+        fd.append('habitacion', val);
+
+        fetch('habitacion_update.php', { method: 'POST', body: fd })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.ok) {
+                    lastSaved = val;
+                    input.classList.remove('is-invalid');
+                    input.classList.add('is-valid');
+                    setTimeout(function () { input.classList.remove('is-valid'); }, 1500);
+                } else {
+                    input.classList.add('is-invalid');
+                    input.title = data.error || 'Error al guardar';
+                }
+            })
+            .catch(function () {
+                input.classList.add('is-invalid');
+                input.title = 'Error de red';
+            });
+    }
+
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    });
+});
+</script>
 <?php include __DIR__ . '/includes/footer.php'; ?>
 </body>
 </html>
