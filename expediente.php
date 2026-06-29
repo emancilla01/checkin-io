@@ -123,11 +123,14 @@ unset($_SESSION['flash']);
       <div class="io-card h-100">
         <h6 class="fw-semibold mb-3" style="color:var(--io-navy);">Documento</h6>
 
-        <!-- Merged document — inline preview -->
+        <!-- Merged document — inline preview (PDF.js canvas, Safari-safe) -->
         <?php if ($merged_doc !== null): ?>
           <div class="mb-3">
-            <iframe src="<?= htmlspecialchars($merged_doc['path']) ?>" width="100%" height="400"
-                    class="border rounded mb-2" style="min-height:400px;"></iframe>
+            <div id="docViewer"
+                 class="border rounded mb-2"
+                 style="height:400px; overflow-y:auto; background:#525659; -webkit-overflow-scrolling:touch;"
+                 data-pdf-url="<?= htmlspecialchars($merged_doc['path']) ?>">
+            </div>
             <div class="d-flex align-items-center gap-2">
               <a href="<?= htmlspecialchars($merged_doc['path']) ?>" target="_blank"
                  class="btn btn-outline-secondary btn-sm">Abrir</a>
@@ -232,6 +235,14 @@ unset($_SESSION['flash']);
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <?php include __DIR__ . '/includes/firma_modal.php'; ?>
+<?php if ($merged_doc !== null): ?>
+<script>
+(function () {
+    var el = document.getElementById('docViewer');
+    if (el) initPdfViewer(el, el.dataset.pdfUrl);
+}());
+</script>
+<?php endif; ?>
 <?php include __DIR__ . '/includes/footer.php'; ?>
 </body>
 </html>

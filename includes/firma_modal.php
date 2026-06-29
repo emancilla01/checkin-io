@@ -19,10 +19,9 @@
 
       <div class="modal-body p-0">
 
-        <!-- PDF preview -->
-        <div style="height:55vh; background:#e9ecef;">
-          <iframe id="firmaIframe" src="" width="100%" height="100%"
-                  style="border:none; display:block;"></iframe>
+        <!-- PDF.js canvas viewer (55vh, dark-grey background matching PDF.js viewer convention) -->
+        <div id="firmaViewer"
+             style="height:55vh; overflow-y:auto; background:#525659; -webkit-overflow-scrolling:touch;">
         </div>
 
         <div class="p-4">
@@ -72,13 +71,17 @@
   </div>
 </div>
 
+<!-- PDF.js 3.11.174 via CDN (same version as pdf-viewer.js worker) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <!-- Signature Pad v4.0.0 -->
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<!-- Shared PDF canvas viewer -->
+<script src="assets/js/pdf-viewer.js"></script>
 
 <script>
 (function () {
     var modal       = document.getElementById('firmaModal');
-    var iframe      = document.getElementById('firmaIframe');
+    var viewer      = document.getElementById('firmaViewer');
     var checkbox    = document.getElementById('firmaAceptar');
     var canvasWrap  = document.getElementById('firmaCanvasWrap');
     var canvas      = document.getElementById('firmaCanvas');
@@ -87,10 +90,10 @@
     var btnGuardar  = document.getElementById('firmaGuardar');
     var expIdInput  = document.getElementById('firmaExpedienteId');
 
-    var pad = null;
+    var pad         = null;
+    var pendingUrl  = ''; // set in show.bs.modal, consumed in shown.bs.modal
 
     function initPad() {
-        // Canvas must be sized to its actual rendered pixels before SignaturePad inits
         var ratio = Math.max(window.devicePixelRatio || 1, 1);
         canvas.width  = canvas.offsetWidth  * ratio;
         canvas.height = canvas.offsetHeight * ratio;
@@ -103,82 +106,89 @@
         });
     }
 
-    // Populate and open
+    // Populate state before the modal animates in
     modal.addEventListener('show.bs.modal', function (e) {
         var btn = e.relatedTarget;
         if (!btn) return;
 
-        iframe.src         = btn.dataset.firmaDocpath || '';
-        expIdInput.value   = btn.dataset.firmaExpid   || '';
+        pendingUrl       = btn.dataset.firmaDocpath || '';
+        expIdInput.value = btn.dataset.firmaExpid   || '';
         document.getElementById('firmaModalLabel').textContent =
             'Firma del documento' + (btn.dataset.firmaNombre ? ' — ' + btn.dataset.firmaNombre : '');
 
-        checkbox.checked = false;
+        // Reset UI
+        checkbox.checked                 = false;
         errorBox.classList.add('d-none');
-        canvasWrap.style.opacity       = '0.45';
-        canvasWrap.style.pointerEvents = 'none';
-        btnLimpiar.disabled = true;
-        btnGuardar.disabled = true;
+        canvasWrap.style.opacity         = '0.45';
+        canvasWrap.style.pointerEvents   = 'none';
+        btnLimpiar.disabled              = true;
+        btnGuardar.disabled              = true;
+
+        // Clear the viewer immediately so old content isn't visible during animation
+        viewer.innerHTML = '';
     });
 
-    // Init pad after modal transition completes (canvas needs layout)
+    // After the modal is fully visible: render PDF and init signature pad.
+    // Both operations need the elements to be laid out (canvas sizing, viewer width).
     modal.addEventListener('shown.bs.modal', function () {
-        if (pad) { pad.off(); }
+        // PDF viewer
+        initPdfViewer(viewer, pendingUrl);
+
+        // Signature pad
+        if (pad) pad.off();
         initPad();
         if (!checkbox.checked) pad.off();
     });
 
-    // Reset on close
+    // Clean up on close
     modal.addEventListener('hidden.bs.modal', function () {
-        iframe.src = '';
+        viewer.innerHTML = '';
+        pendingUrl       = '';
         if (pad) { pad.clear(); pad.off(); }
     });
 
-    // Checkbox toggles canvas
+    // Checkbox gates the signature canvas
     checkbox.addEventListener('change', function () {
         if (checkbox.checked) {
             canvasWrap.style.opacity       = '1';
             canvasWrap.style.pointerEvents = 'auto';
-            btnLimpiar.disabled = false;
+            btnLimpiar.disabled            = false;
             if (pad) pad.on();
         } else {
             canvasWrap.style.opacity       = '0.45';
             canvasWrap.style.pointerEvents = 'none';
-            btnLimpiar.disabled = true;
-            btnGuardar.disabled = true;
+            btnLimpiar.disabled            = true;
+            btnGuardar.disabled            = true;
             if (pad) { pad.clear(); pad.off(); }
         }
         errorBox.classList.add('d-none');
     });
 
-    // Enable Guardar when something is drawn
+    // Enable Guardar once something is actually drawn
     canvas.addEventListener('pointerup', function () {
         if (pad && !pad.isEmpty() && checkbox.checked) {
             btnGuardar.disabled = false;
         }
     });
 
-    // Limpiar
     btnLimpiar.addEventListener('click', function () {
         if (pad) pad.clear();
         btnGuardar.disabled = true;
         errorBox.classList.add('d-none');
     });
 
-    // Guardar
     btnGuardar.addEventListener('click', function () {
         if (!pad || pad.isEmpty()) {
             showError('Por favor, proporciona una firma antes de guardar.');
             return;
         }
-
         var expId = expIdInput.value;
         if (!expId) { showError('Error interno: falta el ID del expediente.'); return; }
 
         var sigData = pad.toDataURL('image/png');
 
-        btnGuardar.disabled = true;
-        btnGuardar.textContent = 'Guardando…';
+        btnGuardar.disabled        = true;
+        btnGuardar.textContent     = 'Guardando…';
         errorBox.classList.add('d-none');
 
         var fd = new FormData();
@@ -193,13 +203,13 @@
                     window.location.reload();
                 } else {
                     showError(data.error || 'Error desconocido al guardar la firma.');
-                    btnGuardar.disabled = false;
+                    btnGuardar.disabled    = false;
                     btnGuardar.textContent = 'Guardar firma';
                 }
             })
             .catch(function () {
                 showError('Error de red. Intenta de nuevo.');
-                btnGuardar.disabled = false;
+                btnGuardar.disabled    = false;
                 btnGuardar.textContent = 'Guardar firma';
             });
     });
@@ -208,5 +218,5 @@
         errorBox.textContent = msg;
         errorBox.classList.remove('d-none');
     }
-})();
+}());
 </script>
