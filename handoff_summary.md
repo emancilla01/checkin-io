@@ -25,37 +25,56 @@ D:\projects\io\
 │
 ├── config.php                  — DB credentials + date_default_timezone_set('America/Matamoros')
 │                                 GITIGNORED — exists separately on each machine
+│                                 Also defines $staticDocsPath (path to club.pdf, contrato.pdf, etc.)
 │
 ├── schema.sql                  — Full DB schema, run once per machine (see Section 3)
 │
 ├── index.php                   — Llegadas page: today's arrivals, search/sort/paginate,
-│                                 Ver/Editar/Eliminar dropdown, status badges
+│                                 Ver/Editar/Eliminar/Combinar dropdown, status badges
 ├── base_datos.php              — All records (no date filter), date-range search, same table/badges
 ├── registro_nuevo.php          — Create new expediente: OCR prefill step + manual form
-├── expediente.php              — View single expediente: info grid, doc list, ID preview
+├── expediente.php              — View single expediente: header info line, doc preview, ID preview
 ├── expediente_editar.php       — Edit expediente fields + upload new doc/identificacion
 ├── expediente_delete.php       — POST-only: delete expediente + files from disk, cascade DB
+├── documento_delete.php        — POST-only: unlink file + DELETE documentos row, redirect to expediente
+├── identificacion_delete.php   — POST-only: unlink file + NULL identificacion_path, redirect to expediente
 ├── login.php                   — Login form (username + password, Spanish error message)
 ├── logout.php                  — Destroys session, redirects to login.php
 │
 ├── bootstrap_admin.php         — ONE-TIME CLI script to create first admin user.
 │                                 DELETE after use. Do NOT deploy to production.
 │
+├── carga_masiva.php            — Batch OCR upload (up to 60 PDFs). AJAX one-file-at-a-time.
+│                                 Results table with checkboxes + Guardar buttons.
+├── carga_masiva_ocr.php        — AJAX endpoint: receives one PDF, runs OCR, returns JSON
+├── carga_masiva_guardar.php    — AJAX endpoint: receives JSON array, saves expedientes + documentos
+│
+├── merge.php                   — Individual merge page (reached from expediente.php or index/base_datos dropdown)
+├── merge_masivo.php            — Bulk merge: today's unmerged arrivals, one Combinar per row
+├── merge_grupo.php             — Group merge: today's arrivals with duplicate nombre+apellido pairs,
+│                                 checkbox multi-select, merges and deletes redundant expedientes
+│
 ├── includes/
 │   ├── auth.php                — auth_attempt(), auth_check(), auth_require(),
 │   │                             auth_role(), auth_logout(), auth_start_session()
 │   ├── db.php                  — PDO connection using config.php variables
 │   ├── navbar.php              — Shared navbar partial; set $active_nav before including
+│   │                             Values: 'llegadas' | 'base-de-datos' | 'registro-nuevo' |
+│   │                                     'carga-masiva' | 'merge-masivo'
+│   │                             (merge_grupo.php sets active_nav = 'merge-masivo')
 │   ├── footer.php              — Shared footer: "Sesion iniciada como: [nombre]"
+│   ├── merge_helper.php        — Shared PDF merge logic. Defines TIER_FILES, RECONOCIMIENTO_OPCIONES,
+│   │                             UPLOAD_DIR. Exports perform_merge() and perform_group_merge().
 │   └── ocr/
 │       ├── PdfFirstPageImageConverter.php  — Wraps pdftoppm; converts PDF p.1 to PNG
 │       ├── TesseractOcrService.php         — Wraps tesseract binary; returns raw text
 │       └── RegisterCardTextParser.php      — Parses OCR text → apellido/nombre/fecha_llegada/crs_no
-│                                             (see Section 5 — active bug in crs_no extraction)
 │
 ├── assets/
 │   ├── css/app.css             — Brand CSS vars + .io-navbar, .io-card, .io-upload-box,
-│   │                             .io-footer, .io-page-header, .btn-io-blue, dropdown z-index fix
+│   │                             .io-footer, .io-page-header, .btn-io-blue,
+│   │                             .io-card .table-responsive { overflow: visible } (dropdown unclip fix)
+│   │                             .io-navbar .nav-link.active { color: var(--io-orange) }
 │   └── js/upload-boxes.js      — Drag-and-drop upload box wiring for [data-upload-box] elements
 │
 ├── uploads/                    — Uploaded files (docs, IDs). TODO: move outside web root in prod.
@@ -63,9 +82,11 @@ D:\projects\io\
 │
 ├── vendor/                     — Composer packages (fpdi, fpdf)
 ├── composer.json / composer.lock
-├── merge_test.php              — Standalone PDF merge test script (early prototype, not part of app)
 └── dashboard_mockup.html       — Static visual mockup (early reference, not part of app)
 ```
+
+**Static docs** (stored at `$staticDocsPath`, gitignored path configured per machine):
+`club.pdf`, `silver_elite.pdf`, `gold_elite.pdf`, `platinum_elite.pdf`, `diamond_elite.pdf`, `contrato.pdf`
 
 ---
 
@@ -124,91 +145,76 @@ CREATE TABLE IF NOT EXISTS documentos (
 ## 4. What's Working and Confirmed
 
 - **Auth:** login/logout/session working. Roles stored in session (`$_SESSION['role']`). **Role-based permission enforcement is NOT yet built** — any logged-in user can do anything for now.
-- **index.php (Llegadas):** today's arrivals filtered by `CURDATE()`, name search (also searches crs_no/habitacion), sort by apellido/nombre, pagination (20/page), status badges (Faltante/Pendiente/Firmado for doc; Faltante/Ok for ID), dropdown actions (Ver/Editar/Eliminar).
-- **base_datos.php:** all records, date-range filter (Fecha desde/hasta), sortable apellido/nombre/fecha_llegada, same badges and dropdown actions.
-- **registro_nuevo.php:** OCR prefill (Step 1: upload reg card → Continuar → pipeline → prefill form) + manual form (Step 2: Guardar). Drag-and-drop upload boxes on all three file inputs. Temp PDF attached as first documento on save without re-upload.
-- **expediente.php:** two-column view (doc info grid + ID preview). No Firmar button yet (blocked on merge feature).
-- **expediente_editar.php:** edit all fields including crs_no/habitacion; upload new doc (adds, doesn't replace); upload new ID (replaces path reference).
-- **expediente_delete.php:** deletes files from disk before DB row; FK cascade removes documentos rows.
+- **index.php / base_datos.php:** search/sort/paginate, status badges (Faltante/Pendiente/Firmado for doc; Faltante/Ok for ID), dropdown actions including Combinar (disabled with tooltip if already merged).
+- **registro_nuevo.php:** OCR prefill (Step 1 → Step 2). Drag-and-drop upload boxes. Temp PDF attached as first documento on save.
+- **expediente.php:** page header shows h1 (Apellido, Nombre), fecha de llegada subtitle, and a horizontal detail line (Apellido / Nombre / CRS No / Habitacion) using `display:flex; flex-wrap:wrap; gap`. Documento card and Identificacion card start at the same visual height — no info grid inside the Documento card. Merged PDF shown as inline `<iframe>` with Eliminar button. Unmerged docs listed with Abrir + Eliminar each. Identificacion shown as image or iframe with Abrir + Eliminar.
+- **expediente_editar.php / expediente_delete.php:** working.
+- **documento_delete.php / identificacion_delete.php:** POST-only, unlink + DB update, flash + redirect.
+- **carga_masiva.php:** AJAX one-file-at-a-time, progressive results table, status badges (listo/incompleto/error), Guardar buttons. MutationObserver drives button enable state (not change event).
+- **merge.php:** individual merge with tier dropdown. Guards against direct URL access when already merged. Calls `perform_merge()` from merge_helper.php.
+- **merge_masivo.php:** today's unmerged arrivals only (`NOT EXISTS` subquery). Per-row `<form id="form-N">` + `<button form="form-N">` pattern. "Combinar grupo" link in page header.
+- **merge_grupo.php:** finds today's unmerged expedientes whose exact nombre+apellido appears more than once. Groups visually by name with count badge. Per-group checkbox table + nivel dropdown + Combinar grupo button. Validates ≥ 2 checked. Primary = lowest id (first registered). Redundant expedientes fully deleted (identificacion files unlinked, rows deleted). Calls `perform_group_merge()` from merge_helper.php.
 - **Brand colors:** `--io-navy: #001f4f`, `--io-blue: #1658b8`, `--io-orange: #e35205`, `--io-bg: #f5f6f8`, `--io-surface: #ffffff`
 
 ---
 
-## 5. Current Unresolved Bug — crs_no OCR Extraction
+## 5. merge_helper.php — Key Design
 
-**Status as of last session:** apellido, nombre, fecha_llegada extract correctly. crs_no is not extracting correctly.
+File: `includes/merge_helper.php`. Required by merge.php, merge_masivo.php, merge_grupo.php.
 
-**History of the bug:**
-1. First version: `crs_no` aliases included `'conf'`, which matched `"Conf. #:"` on the same OCR line instead of `"CRS No:"`. Fixed by removing `'conf'` from aliases.
-2. After that fix: crs_no now produces no result at all. This regression was the state at end of last session.
-
-**The actual card line (from CONDE_AGUILAR__CESAR_D.pdf):**
-```
-Conf. #: 3961360    Tipo: KNGN    Adultos: 1    CRS No: 24120824
-```
-
-**Expected:** `crs_no = "24120824"`
-**Actual:** empty string
-
-**Likely cause:** `"CRS No"` appears mid-line after other label:value pairs. The inline parser regex is:
+**Constants:**
 ```php
-'/(?:^|\s)' . preg_quote($alias, '/') . '\s*[:.][ \t]*(.+)/i'
+UPLOAD_DIR           // __DIR__ . '/../uploads/'
+TIER_FILES           // ['club' => 'club.pdf', 'silver_elite' => ..., ...]
+RECONOCIMIENTO_OPCIONES  // ['' => 'Sin reconocimiento', 'club' => 'Club', ...]
 ```
-The `(?:^|\s)` anchor requires whitespace before `CRS No`, but after OCR of a side-by-side layout, there may be multiple spaces or the match may be failing for another reason. The `trimAtNextLabel()` stop-list also contains `'crs no'` as a stop-word, which could be causing the value to be trimmed to empty if it appears at the very start of what was captured.
 
-**Full current contents of RegisterCardTextParser.php for diagnosis:**
+**`perform_merge(PDO, exp, unmerged_docs, nivel, static_path): string`**
+- Single expediente. Returns `''` on success, error string on failure.
+- Merge order: (a) tier PDF if selected, (b) unmerged docs in created_at ASC, (c) contrato.pdf always last.
+- Output filename: `Apellido_Nombre_DDMMYY.pdf` with `_2`, `_3`... collision numbering.
+- DB: `beginTransaction()` → DELETE unmerged rows → INSERT merged row → `commit()` → `@unlink()` originals.
+- On failure: `rollBack()` + delete partial output file.
 
+**`perform_group_merge(PDO, primary_exp, all_docs, redundant_ids, nivel, static_path): string`**
+- Multiple expedientes. `all_docs` is a pre-flattened array of all is_merged=0 docs across every checked expediente, ordered `expediente_id ASC, created_at ASC` (primary's docs come first because primary has the lowest id).
+- Same PDF build order as perform_merge (tier → docs → contrato).
+- DB transaction: DELETE all unmerged doc rows → INSERT merged row on primary → fetch redundant identificacion_paths → DELETE remaining documentos on redundant expedientes (safety net) → DELETE redundant expediente rows → commit.
+- After commit: unlink original doc files + unlink redundant identificacion files.
+
+**FPDF class alias** (required by all merge callers — FPDI's FpdfTpl extends `\FPDF` global, but fpdf/fpdf ^1.86 is PSR-4 namespaced as `\Fpdf\Fpdf`):
 ```php
-<?php
-
-class RegisterCardTextParser
-{
-    private const ALL_CARD_LABELS = [
-        'apellido', 'nombre', 'direccion 2', 'direccion', 'empresa', 'ciudad',
-        'pasaporte', 'estado', 'fecha de nacimiento', 'cod. postal', 'cod.postal',
-        'marca auto', 'n de placa', 'tel', 'forma pago', 'email', 'n membresia',
-        'rfc', 'llegada', 'salida', 'hab', 'noches', 'tarifa', 'grupo',
-        'cod. tarifa', 'cod.tarifa', 'conf', 'crs no.', 'crs no', 'tipo', 'adultos',
-        'last name', 'first name', 'arrival', 'departure', 'room',
-    ];
-
-    private const LABEL_ALIASES = [
-        'apellido'      => ['apellido', 'last name', 'lastname', 'surname'],
-        'nombre'        => ['nombre', 'first name', 'firstname', 'given name'],
-        'fecha_llegada' => ['llegada', 'arrival date', 'arr. date', 'arr date', 'fecha llegada', 'fecha de llegada'],
-        'crs_no'        => ['crs no.', 'crs no', 'crs number', 'crs#'],
-    ];
-
-    public function parse(string $text): array { ... }
-    private function parseInline(string $text): array { ... }
-    private function parseSequential(string $text): array { ... }
-    private function trimAtNextLabel(string $value): string { ... }
-    private function looksLikeLabel(string $line): bool { ... }
-    private function normaliseDate(string $raw): string { ... }
+if (!class_exists('FPDF')) {
+    class_alias(\Fpdf\Fpdf::class, 'FPDF');
 }
 ```
 
-**The self-defeating issue to investigate first:** `ALL_CARD_LABELS` contains `'crs no'` as a stop-word. When the parser extracts the value after `"CRS No: "`, it captures `"24120824"`, then calls `trimAtNextLabel("24120824")`. But if the regex in `trimAtNextLabel` is matching `'crs no'` somewhere in the surrounding context (e.g. if the capture group grabbed more than just `24120824`), it may be truncating to empty. Add a debug `var_dump` of the raw capture `$m[1]` before trimming to see exactly what's being captured and what `trimAtNextLabel` returns.
+---
+
+## 6. OCR Pipeline
+
+Flow: `registro_nuevo.php` / `carga_masiva_ocr.php` → `PdfFirstPageImageConverter` (pdftoppm) → `TesseractOcrService` (--psm 6, spa+eng) → `RegisterCardTextParser`
+
+**RegisterCardTextParser key facts:**
+- `ALL_CARD_LABELS` is used as a stop-word list in `trimAtNextLabel()` — any recognized label followed by `:` or `.` truncates the captured value.
+- Inline regex: `'/(?:^|\s)' . preg_quote($alias, '/') . '\s*(?:[:.]\s*|\s+)(.+)/i'` — delimiter (colon/period) OR plain whitespace, handles "CRS No 62617537" with no delimiter.
+- `fecha_llegada` aliases: `['llegada', 'arrival', 'arrival date', 'arr. date', 'arr date', 'fecha llegada', 'fecha de llegada']`
+- `crs_no` aliases: `['crs no.', 'crs no', 'crs number', 'crs#']` — no 'conf' or booking-related aliases.
+- `normaliseDate()` handles DD-MM-YY OPERA card format.
 
 ---
 
-## 6. Not Yet Built (Priority Order)
+## 7. Not Yet Built (Priority Order)
 
-1. **Fix crs_no OCR bug** (immediate next step — see Section 5)
-2. **Batch upload — `carga_masiva.php`**: multi-PDF OCR upload + review table + save selected. The original prototype had a >7 PDF timeout bug; this port must handle ~60 PDFs/day without timing out. Also needs to extract crs_no (once bug above is fixed).
-3. **Document merge feature:**
-   - *Individual merge* (from `expediente.php` Ver page): optional recognition-tier PDF dropdown (1 of 5 static files) → reg card(s) already uploaded → contract (1 static file, always auto-included) → single merged PDF, originals discarded after merge
-   - *Bulk dedicated merge view*: table of today's unmerged simple cases, one Combinar button per row
-   - *Multi-room grouping view*: checkbox multi-select for guests with multiple rooms/bookings (differentiated by CRS No since room numbers not assigned yet); reached deliberately from an individual record
-   - `is_merged = 1` on the resulting documento row; `original_name` = generated name (e.g. `Mancilla_Martinez_270626.pdf`)
-4. **Firmar (signature) modal/flow**: signs the merged PDF only, in-place (stamps existing file, updates `signed_at`); button disabled until a merged doc exists
-5. **User management page** (admin-only): create/edit/delete users, reset passwords, assign roles
-6. **Role-based permission enforcement**: viewer = read-only everywhere; editor = no user management, no historical deletes; admin = full access
-7. **Self-service password change** (any role)
+1. **Firmar (signature) modal/flow**: signs the merged PDF only, in-place (stamps existing file, updates `signed_at`); button disabled until a merged doc exists. The `signed_at` column already exists in `documentos`.
+2. **User management page** (admin-only): create/edit/delete users, reset passwords, assign roles
+3. **Role-based permission enforcement**: viewer = read-only everywhere; editor = no user management, no historical deletes; admin = full access (currently any logged-in user can do anything)
+4. **Self-service password change** (any role)
+5. **Move uploads/ outside public web root** in production
 
 ---
 
-## 7. Environment Details
+## 8. Environment Details
 
 | | Laptop (dev) | Production server |
 |---|---|---|
@@ -221,6 +227,7 @@ class RegisterCardTextParser
 **config.php** (gitignored — must be created manually on each machine):
 - Laptop: `$db_host = '127.0.0.1'`, password = `Ch33rlos.`
 - Server: `$db_host = 'localhost'`, password = blank (default XAMPP)
+- Both: `$staticDocsPath` = absolute path to the static-docs directory
 
 **External binaries needed for OCR:**
 - `pdftoppm` (Poppler) — for PDF-to-image conversion
