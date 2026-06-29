@@ -9,30 +9,33 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$expediente_id = (int)($_POST['expediente_id'] ?? 0);
-if ($expediente_id <= 0) {
+$doc_id = (int)($_POST['doc_id'] ?? 0);
+if ($doc_id <= 0) {
     header('Location: index.php');
     exit;
 }
 
-$stmt = $pdo->prepare("SELECT identificacion_path FROM expedientes WHERE id = ?");
-$stmt->execute([$expediente_id]);
-$exp = $stmt->fetch();
+$stmt = $pdo->prepare(
+    "SELECT d.id, d.path, d.expediente_id FROM documentos d WHERE d.id = ? AND d.is_identificacion = 1"
+);
+$stmt->execute([$doc_id]);
+$doc = $stmt->fetch();
 
-if (!$exp || empty($exp['identificacion_path'])) {
-    header('Location: expediente.php?id=' . $expediente_id);
+if (!$doc) {
+    header('Location: index.php');
     exit;
 }
 
+$expediente_id = (int)$doc['expediente_id'];
+
 // Delete physical file
-$abs = __DIR__ . '/' . ltrim($exp['identificacion_path'], '/\\');
+$abs = __DIR__ . '/' . ltrim($doc['path'], '/\\');
 if (file_exists($abs)) {
     unlink($abs);
 }
 
-// Clear the path on the expediente row
-$pdo->prepare("UPDATE expedientes SET identificacion_path = NULL WHERE id = ?")
-    ->execute([$expediente_id]);
+// Delete the documentos row
+$pdo->prepare("DELETE FROM documentos WHERE id = ?")->execute([$doc_id]);
 
 $_SESSION['flash'] = 'Identificacion eliminada correctamente.';
 header('Location: expediente.php?id=' . $expediente_id);

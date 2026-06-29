@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      $habitacion !== '' ? $habitacion : null,
                      $id]);
 
-        // New identificacion (replaces existing path reference)
+        // New identificacion — adds a new documentos row (is_identificacion = 1)
         if (!empty($_FILES['identificacion']['name'])) {
             $file = $_FILES['identificacion'];
             if ($file['error'] === UPLOAD_ERR_OK) {
@@ -90,8 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $dest = unique_path_ed(UPLOAD_DIR, $safe);
                 move_uploaded_file($file['tmp_name'], $dest);
                 $rel  = 'uploads/' . basename($dest);
-                $pdo->prepare("UPDATE expedientes SET identificacion_path = ? WHERE id = ?")
-                    ->execute([$rel, $id]);
+                $pdo->prepare(
+                    "INSERT INTO documentos (expediente_id, path, original_name, is_merged, is_identificacion) VALUES (?, ?, ?, 0, 1)"
+                )->execute([$id, $rel, $safe]);
             }
         }
 

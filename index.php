@@ -49,11 +49,12 @@ $sql = "
         e.fecha_llegada,
         e.crs_no,
         e.habitacion,
-        e.identificacion_path,
         d.id        AS doc_id,
-        d.signed_at AS doc_signed_at
+        d.signed_at AS doc_signed_at,
+        id_d.id     AS id_doc_id
     FROM expedientes e
-    LEFT JOIN documentos d ON d.expediente_id = e.id AND d.is_merged = 1
+    LEFT JOIN documentos d    ON d.expediente_id = e.id AND d.is_merged = 1
+    LEFT JOIN documentos id_d ON id_d.expediente_id = e.id AND id_d.is_identificacion = 1
     $where
     $order_clause
     LIMIT $per_page OFFSET $offset
@@ -162,7 +163,7 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
         <tbody>
           <?php foreach ($rows as $row):
             $status = doc_status($row);
-            $id_ok  = !empty($row['identificacion_path']);
+            $id_ok  = !empty($row['id_doc_id']);
           ?>
           <tr>
             <td><?= htmlspecialchars($row['apellido']) ?></td>

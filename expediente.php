@@ -24,8 +24,11 @@ $documentos = $docs->fetchAll();
 
 $merged_doc    = null;
 $unmerged_docs = [];
+$id_docs       = [];
 foreach ($documentos as $d) {
-    if ($d['is_merged']) {
+    if ($d['is_identificacion']) {
+        $id_docs[] = $d;
+    } elseif ($d['is_merged']) {
         $merged_doc = $d;
     } else {
         $unmerged_docs[] = $d;
@@ -33,9 +36,11 @@ foreach ($documentos as $d) {
 }
 $has_merged = $merged_doc !== null;
 
-// Identify identificacion type
-$id_path = $exp['identificacion_path'] ?? '';
-$id_ext  = strtolower(pathinfo($id_path, PATHINFO_EXTENSION));
+// Primary identificacion = first uploaded (earliest created_at, already ASC)
+$id_primary    = $id_docs[0] ?? null;
+$id_additional = array_slice($id_docs, 1);
+
+$id_ext      = $id_primary ? strtolower(pathinfo($id_primary['path'], PATHINFO_EXTENSION)) : '';
 $id_is_image = in_array($id_ext, ['jpg','jpeg','png','webp','gif']);
 $id_is_pdf   = $id_ext === 'pdf';
 
@@ -154,28 +159,49 @@ unset($_SESSION['flash']);
       <div class="io-card h-100">
         <h6 class="fw-semibold mb-3" style="color:var(--io-navy);">Identificacion</h6>
 
-        <?php if (empty($id_path)): ?>
+        <?php if ($id_primary === null): ?>
           <p class="text-muted mb-0" style="font-size:0.9rem;">Identificacion pendiente de carga.</p>
 
         <?php else: ?>
 
           <?php if ($id_is_image): ?>
-            <img src="<?= htmlspecialchars($id_path) ?>" alt="Identificacion"
+            <img src="<?= htmlspecialchars($id_primary['path']) ?>" alt="Identificacion"
                  class="img-fluid mb-3 rounded" style="max-height:300px; object-fit:contain;">
           <?php elseif ($id_is_pdf): ?>
-            <iframe src="<?= htmlspecialchars($id_path) ?>" width="100%" height="400"
+            <iframe src="<?= htmlspecialchars($id_primary['path']) ?>" width="100%" height="400"
                     class="border rounded mb-3" style="min-height:400px;"></iframe>
           <?php endif; ?>
 
-          <div class="d-flex gap-2 align-items-center">
-            <a href="<?= htmlspecialchars($id_path) ?>" target="_blank"
-               class="btn btn-outline-secondary btn-sm">Abrir identificacion</a>
+          <div class="d-flex gap-2 align-items-center mb-3">
+            <a href="<?= htmlspecialchars($id_primary['path']) ?>" target="_blank"
+               class="btn btn-outline-secondary btn-sm">Abrir</a>
             <form method="POST" action="identificacion_delete.php" class="d-inline"
-                  onsubmit="return confirm('¿Estas seguro de eliminar la identificacion?');">
-              <input type="hidden" name="expediente_id" value="<?= $id ?>">
+                  onsubmit="return confirm('¿Estas seguro de eliminar esta identificacion?');">
+              <input type="hidden" name="doc_id" value="<?= (int)$id_primary['id'] ?>">
               <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
             </form>
           </div>
+
+          <?php if (!empty($id_additional)): ?>
+            <ul class="list-unstyled mb-0">
+              <?php foreach ($id_additional as $id_doc): ?>
+              <li class="d-flex align-items-center justify-content-between py-1 border-bottom">
+                <span class="text-truncate me-2" style="font-size:0.875rem; max-width:160px;">
+                  <?= htmlspecialchars($id_doc['original_name'] ?? basename($id_doc['path'])) ?>
+                </span>
+                <div class="d-flex gap-1 flex-shrink-0">
+                  <a href="<?= htmlspecialchars($id_doc['path']) ?>" target="_blank"
+                     class="btn btn-outline-secondary btn-sm">Abrir</a>
+                  <form method="POST" action="identificacion_delete.php"
+                        onsubmit="return confirm('¿Estas seguro de eliminar esta identificacion?');">
+                    <input type="hidden" name="doc_id" value="<?= (int)$id_doc['id'] ?>">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+                  </form>
+                </div>
+              </li>
+              <?php endforeach; ?>
+            </ul>
+          <?php endif; ?>
 
         <?php endif; ?>
 
