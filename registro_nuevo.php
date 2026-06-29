@@ -92,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['_action'] ?? '') === 'ocr'
 
         } catch (Exception $e) {
             // OCR failed — keep temp file for attachment but show blank form
+            error_log('[IO OCR] ' . get_class($e) . ': ' . $e->getMessage());
             $_SESSION['ocr_prefill']   = [];
             $_SESSION['ocr_temp_path'] = $temp_dest;
             $ocr_error = 'OCR no pudo extraer datos del archivo. Puedes llenar el formulario manualmente.';

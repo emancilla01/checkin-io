@@ -45,9 +45,14 @@ class PdfFirstPageImageConverter
         $env = getenv('PDFTOPPM_BINARY');
         if ($env && file_exists($env)) return $env;
 
-        // 2. Common Windows WinGet install path
-        $winget = 'C:\Program Files\Poppler\Library\bin\pdftoppm.exe';
-        if (file_exists($winget)) return $winget;
+        // 2. Known Windows install paths (independent of Apache's inherited PATH)
+        $candidates = [
+            'C:\Program Files\Poppler\Library\bin\pdftoppm.exe',  // WinGet
+            'C:\poppler-26.02.0\Library\bin\pdftoppm.exe',        // manual install
+        ];
+        foreach ($candidates as $path) {
+            if (file_exists($path)) return $path;
+        }
 
         // 3. Assume on PATH
         return 'pdftoppm';
