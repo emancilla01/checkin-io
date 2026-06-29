@@ -70,11 +70,9 @@ try {
         $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
         $fpdi->useTemplate($tpl);
 
-        if ($i === $page_count) {
-            // Stamp signature on last page: x=70mm, y=(page_height - 45mm), width=99mm
-            $sig_y = $size['height'] - 45;
-            $fpdi->Image($tmp_sig, 70, $sig_y, 99, 0, 'PNG');
-        }
+        // Stamp signature on every page: x=70mm, y=(page_height - 45mm), width=99mm
+        $sig_y = $size['height'] - 45;
+        $fpdi->Image($tmp_sig, 70, $sig_y, 99, 0, 'PNG');
     }
 
     $fpdi->Output('F', $pdf_abs);
