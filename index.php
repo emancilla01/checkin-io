@@ -2,7 +2,7 @@
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/auth.php';
 auth_require();
-
+//does not include signature code, user management, external folder save yet.
 // --- Search ---
 $search = trim($_GET['search'] ?? '');
 
