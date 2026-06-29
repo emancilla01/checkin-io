@@ -105,3 +105,18 @@ body {
     background-color: #124da0;
     color: #ffffff;
 }
+
+.btn-io-orange {
+    background-color: var(--io-orange);
+    color: #ffffff;
+    border: none;
+}
+.btn-io-orange:hover {
+    background-color: #c4470a;
+    color: #ffffff;
+}
+.btn-io-orange:disabled {
+    background-color: var(--io-orange);
+    color: #ffffff;
+    opacity: 0.45;
+}

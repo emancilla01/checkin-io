@@ -94,6 +94,20 @@ unset($_SESSION['flash']);
       <?php else: ?>
         <a href="merge.php?id=<?= $id ?>" class="btn btn-outline-secondary btn-sm">Combinar</a>
       <?php endif; ?>
+      <?php if ($merged_doc !== null && $merged_doc['signed_at'] === null): ?>
+        <button type="button" class="btn btn-io-orange btn-sm"
+                data-bs-toggle="modal" data-bs-target="#firmaModal"
+                data-firma-expid="<?= $id ?>"
+                data-firma-docpath="<?= htmlspecialchars($merged_doc['path']) ?>"
+                data-firma-nombre="<?= htmlspecialchars($exp['apellido'] . ', ' . $exp['nombre']) ?>">
+          Firmar
+        </button>
+      <?php elseif ($merged_doc !== null && $merged_doc['signed_at'] !== null): ?>
+        <button type="button" class="btn btn-success btn-sm" disabled>Firmado</button>
+      <?php else: ?>
+        <button type="button" class="btn btn-io-orange btn-sm" disabled
+                title="Primero combina los documentos para poder firmar.">Firmar</button>
+      <?php endif; ?>
       <form method="POST" action="expediente_delete.php" class="d-inline"
             onsubmit="return confirm('¿Eliminar este expediente? Esta accion no se puede deshacer.');">
         <input type="hidden" name="id" value="<?= $id ?>">
@@ -217,6 +231,7 @@ unset($_SESSION['flash']);
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<?php include __DIR__ . '/includes/firma_modal.php'; ?>
 <?php include __DIR__ . '/includes/footer.php'; ?>
 </body>
 </html>

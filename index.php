@@ -50,6 +50,7 @@ $sql = "
         e.crs_no,
         e.habitacion,
         d.id        AS doc_id,
+        d.path      AS doc_path,
         d.signed_at AS doc_signed_at,
         id_d.id     AS id_doc_id
     FROM expedientes e
@@ -199,6 +200,20 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
               <div class="d-flex gap-1">
                 <a href="expediente.php?id=<?= (int)$row['id'] ?>"
                    class="btn btn-io-blue btn-sm">Ver</a>
+                <?php if ($row['doc_id'] !== null && $row['doc_signed_at'] === null): ?>
+                  <button type="button" class="btn btn-io-orange btn-sm"
+                          data-bs-toggle="modal" data-bs-target="#firmaModal"
+                          data-firma-expid="<?= (int)$row['id'] ?>"
+                          data-firma-docpath="<?= htmlspecialchars($row['doc_path'] ?? '') ?>"
+                          data-firma-nombre="<?= htmlspecialchars($row['apellido'] . ', ' . $row['nombre']) ?>">
+                    Firmar
+                  </button>
+                <?php elseif ($row['doc_id'] !== null && $row['doc_signed_at'] !== null): ?>
+                  <button type="button" class="btn btn-success btn-sm" disabled>Firmado</button>
+                <?php else: ?>
+                  <button type="button" class="btn btn-io-orange btn-sm" disabled
+                          title="Sin documento combinado">Firmar</button>
+                <?php endif; ?>
                 <div class="dropdown">
                   <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
                           data-bs-toggle="dropdown" aria-expanded="false">Mas</button>
@@ -259,6 +274,7 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/upload-boxes.js"></script>
+<?php include __DIR__ . '/includes/firma_modal.php'; ?>
 <script>
 document.querySelectorAll('.hab-inline').forEach(function (input) {
     var lastSaved = input.value;
