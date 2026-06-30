@@ -208,7 +208,7 @@ Flow: `registro_nuevo.php` / `carga_masiva_ocr.php` → `PdfFirstPageImageConver
 
 1. **Firmar (signature) modal/flow**: signs the merged PDF only, in-place (stamps existing file, updates `signed_at`); button disabled until a merged doc exists. The `signed_at` column already exists in `documentos`.
 2. **User management page** (admin-only): create/edit/delete users, reset passwords, assign roles
-3. **Role-based permission enforcement**: viewer = read-only everywhere; editor = no user management, no historical deletes; admin = full access (currently any logged-in user can do anything)
+3. **Role-based permission enforcement**: viewer = read-only everywhere; editor = no user management, no historical deletes; admin = full access. **Partially started** — `merge_grupo.php` already calls `auth_require_role(['admin', 'editor'])`, blocking viewers. All other pages still allow any logged-in user to do anything.
 4. **Self-service password change** (any role)
 5. **Move uploads/ outside public web root** in production
 
