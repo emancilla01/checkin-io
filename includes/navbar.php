@@ -10,6 +10,9 @@ $active_nav = $active_nav ?? '';
     <a class="nav-link <?= $active_nav === 'registro-nuevo' ? 'active' : '' ?>" href="registro_nuevo.php">Agregar registro</a>
     <a class="nav-link <?= $active_nav === 'carga-masiva'   ? 'active' : '' ?>" href="carga_masiva.php">Carga masiva</a>
     <a class="nav-link <?= $active_nav === 'merge-masivo'   ? 'active' : '' ?>" href="merge_masivo.php">Combinar (masivo)</a>
+    <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
+    <a class="nav-link <?= $active_nav === 'usuarios' ? 'active' : '' ?>" href="usuarios.php">Usuarios</a>
+    <?php endif; ?>
     <a class="nav-link" href="logout.php">Cerrar sesion</a>
   </div>
 </nav>
