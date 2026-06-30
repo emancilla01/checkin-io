@@ -2,8 +2,8 @@
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/auth.php';
 auth_require();
-// branched off to first version of the app, so we can test new features without affecting the main version. 
-// has everything from v1. still needs signature capture, user management, and other features.
+// branched off to second and first production version of the app (v2), so we can test new features without affecting the main version. 
+// has everything from v1. plus signature capture, user management, sensitive data saving outside project folder, and other features.
 // --- Search ---
 $search = trim($_GET['search'] ?? '');
 
