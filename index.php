@@ -114,9 +114,13 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
 <div class="container-lg py-4">
 
   <!-- Flash message -->
-  <?php if ($flash): ?>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-      <?= htmlspecialchars($flash) ?>
+  <?php if ($flash):
+    $flash_type = is_array($flash) ? ($flash['type'] ?? 'success') : 'success';
+    $flash_msg  = is_array($flash) ? ($flash['message'] ?? '') : $flash;
+    $alert_class = $flash_type === 'warning' ? 'alert-warning' : 'alert-success';
+  ?>
+    <div class="alert <?= $alert_class ?> alert-dismissible fade show" role="alert">
+      <?= htmlspecialchars($flash_msg) ?>
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
   <?php endif; ?>
@@ -162,23 +166,29 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
           </tr>
         </thead>
         <tbody>
-          <?php foreach ($rows as $row):
-            $status = doc_status($row);
-            $id_ok  = !empty($row['id_doc_id']);
+          <?php
+            foreach ($rows as $row):
+            $status    = doc_status($row);
+            $id_ok     = !empty($row['id_doc_id']);
+            $is_viewer = auth_role() === 'viewer';
           ?>
           <tr>
             <td><?= htmlspecialchars($row['apellido']) ?></td>
             <td><?= htmlspecialchars($row['nombre']) ?></td>
             <td><?= htmlspecialchars($row['fecha_llegada']) ?></td>
-            <td class="text-muted"><?= !empty($row['crs_no'])    ? htmlspecialchars($row['crs_no'])    : '-' ?></td>
+            <td class="text-muted"><?= !empty($row['crs_no']) ? htmlspecialchars($row['crs_no']) : '-' ?></td>
             <td>
-              <input type="text"
-                     class="form-control form-control-sm hab-inline"
-                     data-id="<?= (int)$row['id'] ?>"
-                     value="<?= htmlspecialchars($row['habitacion'] ?? '') ?>"
-                     placeholder="—"
-                     maxlength="20"
-                     style="width:80px;">
+              <?php if ($is_viewer): ?>
+                <span class="text-muted"><?= htmlspecialchars($row['habitacion'] ?? '—') ?></span>
+              <?php else: ?>
+                <input type="text"
+                       class="form-control form-control-sm hab-inline"
+                       data-id="<?= (int)$row['id'] ?>"
+                       value="<?= htmlspecialchars($row['habitacion'] ?? '') ?>"
+                       placeholder="—"
+                       maxlength="20"
+                       style="width:80px;">
+              <?php endif; ?>
             </td>
             <td>
               <?php if ($status === 'Firmado'): ?>
@@ -200,44 +210,46 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
               <div class="d-flex gap-1">
                 <a href="expediente.php?id=<?= (int)$row['id'] ?>"
                    class="btn btn-io-blue btn-sm">Ver</a>
-                <?php if ($row['doc_id'] !== null && $row['doc_signed_at'] === null): ?>
-                  <button type="button" class="btn btn-io-orange btn-sm"
-                          data-bs-toggle="modal" data-bs-target="#firmaModal"
-                          data-firma-expid="<?= (int)$row['id'] ?>"
-                          data-firma-docpath="<?= htmlspecialchars($row['doc_path'] ?? '') ?>"
-                          data-firma-nombre="<?= htmlspecialchars($row['apellido'] . ', ' . $row['nombre']) ?>">
-                    Firmar
-                  </button>
-                <?php elseif ($row['doc_id'] !== null && $row['doc_signed_at'] !== null): ?>
-                  <button type="button" class="btn btn-success btn-sm" disabled>Firmado</button>
-                <?php else: ?>
-                  <button type="button" class="btn btn-io-orange btn-sm" disabled
-                          title="Sin documento combinado">Firmar</button>
+                <?php if (!$is_viewer): ?>
+                  <?php if ($row['doc_id'] !== null && $row['doc_signed_at'] === null): ?>
+                    <button type="button" class="btn btn-io-orange btn-sm"
+                            data-bs-toggle="modal" data-bs-target="#firmaModal"
+                            data-firma-expid="<?= (int)$row['id'] ?>"
+                            data-firma-docpath="<?= htmlspecialchars($row['doc_path'] ?? '') ?>"
+                            data-firma-nombre="<?= htmlspecialchars($row['apellido'] . ', ' . $row['nombre']) ?>">
+                      Firmar
+                    </button>
+                  <?php elseif ($row['doc_id'] !== null && $row['doc_signed_at'] !== null): ?>
+                    <button type="button" class="btn btn-success btn-sm" disabled>Firmado</button>
+                  <?php else: ?>
+                    <button type="button" class="btn btn-io-orange btn-sm" disabled
+                            title="Sin documento combinado">Firmar</button>
+                  <?php endif; ?>
+                  <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">Mas</button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li>
+                        <a class="dropdown-item" href="expediente_editar.php?id=<?= (int)$row['id'] ?>">Editar</a>
+                      </li>
+                      <li>
+                        <?php if ($row['doc_id'] !== null): ?>
+                          <span class="dropdown-item text-muted" style="cursor:default;"
+                                title="Este expediente ya tiene un documento combinado.">Combinar</span>
+                        <?php else: ?>
+                          <a class="dropdown-item" href="merge.php?id=<?= (int)$row['id'] ?>">Combinar</a>
+                        <?php endif; ?>
+                      </li>
+                      <li>
+                        <form method="POST" action="expediente_delete.php"
+                              onsubmit="return confirm('¿Estas seguro de eliminar este registro?');">
+                          <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                          <button type="submit" class="dropdown-item text-danger">Eliminar</button>
+                        </form>
+                      </li>
+                    </ul>
+                  </div>
                 <?php endif; ?>
-                <div class="dropdown">
-                  <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
-                          data-bs-toggle="dropdown" aria-expanded="false">Mas</button>
-                  <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                      <a class="dropdown-item" href="expediente_editar.php?id=<?= (int)$row['id'] ?>">Editar</a>
-                    </li>
-                    <li>
-                      <?php if ($row['doc_id'] !== null): ?>
-                        <span class="dropdown-item text-muted" style="cursor:default;"
-                              title="Este expediente ya tiene un documento combinado.">Combinar</span>
-                      <?php else: ?>
-                        <a class="dropdown-item" href="merge.php?id=<?= (int)$row['id'] ?>">Combinar</a>
-                      <?php endif; ?>
-                    </li>
-                    <li>
-                      <form method="POST" action="expediente_delete.php"
-                            onsubmit="return confirm('¿Estas seguro de eliminar este registro?');">
-                        <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-                        <button type="submit" class="dropdown-item text-danger">Eliminar</button>
-                      </form>
-                    </li>
-                  </ul>
-                </div>
               </div>
             </td>
           </tr>

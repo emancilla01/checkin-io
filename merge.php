@@ -10,6 +10,7 @@ if (!class_exists('FPDF')) {
 
 auth_require();
 auth_start_session();
+auth_require_role(['admin', 'editor']);
 
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) {

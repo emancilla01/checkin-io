@@ -40,6 +40,16 @@ function auth_role(): string {
     return $_SESSION['role'] ?? '';
 }
 
+function auth_require_role(array $allowed_roles): void {
+    auth_start_session();
+    $role = $_SESSION['role'] ?? '';
+    if (!in_array($role, $allowed_roles, true)) {
+        $_SESSION['flash'] = ['type' => 'warning', 'message' => 'Acceso restringido.'];
+        header('Location: index.php');
+        exit;
+    }
+}
+
 function auth_logout(): void {
     auth_start_session();
     $_SESSION = [];

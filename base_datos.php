@@ -185,9 +185,15 @@ $filters = [
           </tr>
         </thead>
         <tbody>
-          <?php foreach ($rows as $row):
-            $status = doc_status_bd($row);
-            $id_ok  = !empty($row['id_doc_id']);
+          <?php
+            foreach ($rows as $row):
+            $status      = doc_status_bd($row);
+            $id_ok       = !empty($row['id_doc_id']);
+            $role        = auth_role();
+            $is_viewer   = $role === 'viewer';
+            $is_admin    = $role === 'admin';
+            $is_today    = $row['fecha_llegada'] === date('Y-m-d');
+            $can_delete  = $is_admin || ($role === 'editor' && $is_today);
           ?>
           <tr>
             <td><?= htmlspecialchars($row['apellido']) ?></td>
@@ -215,6 +221,7 @@ $filters = [
               <div class="d-flex gap-1">
                 <a href="expediente.php?id=<?= (int)$row['id'] ?>"
                    class="btn btn-io-blue btn-sm">Ver</a>
+                <?php if (!$is_viewer): ?>
                 <div class="dropdown">
                   <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
                           data-bs-toggle="dropdown" aria-expanded="false">Mas</button>
@@ -230,6 +237,7 @@ $filters = [
                         <a class="dropdown-item" href="merge.php?id=<?= (int)$row['id'] ?>">Combinar</a>
                       <?php endif; ?>
                     </li>
+                    <?php if ($can_delete): ?>
                     <li>
                       <form method="POST" action="expediente_delete.php"
                             onsubmit="return confirm('¿Estas seguro de eliminar este registro?');">
@@ -237,8 +245,10 @@ $filters = [
                         <button type="submit" class="dropdown-item text-danger">Eliminar</button>
                       </form>
                     </li>
+                    <?php endif; ?>
                   </ul>
                 </div>
+                <?php endif; ?>
               </div>
             </td>
           </tr>

@@ -87,6 +87,7 @@ unset($_SESSION['flash']);
       </p>
     </div>
     <div class="d-flex gap-2">
+      <?php if (auth_role() !== 'viewer'): ?>
       <a href="expediente_editar.php?id=<?= $id ?>" class="btn btn-outline-secondary btn-sm">Editar</a>
       <?php if ($has_merged): ?>
         <button class="btn btn-outline-secondary btn-sm" disabled
@@ -113,6 +114,7 @@ unset($_SESSION['flash']);
         <input type="hidden" name="id" value="<?= $id ?>">
         <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
       </form>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -134,11 +136,13 @@ unset($_SESSION['flash']);
             <div class="d-flex align-items-center gap-2">
               <a href="<?= htmlspecialchars($merged_doc['path']) ?>" target="_blank"
                  class="btn btn-outline-secondary btn-sm">Abrir</a>
+              <?php if (auth_role() !== 'viewer'): ?>
               <form method="POST" action="documento_delete.php" class="d-inline"
                     onsubmit="return confirm('¿Estas seguro de eliminar este documento?');">
                 <input type="hidden" name="doc_id" value="<?= (int)$merged_doc['id'] ?>">
                 <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
               </form>
+              <?php endif; ?>
             </div>
           </div>
         <?php endif; ?>
@@ -154,11 +158,13 @@ unset($_SESSION['flash']);
               <div class="d-flex gap-1 flex-shrink-0">
                 <a href="<?= htmlspecialchars($doc['path']) ?>" target="_blank"
                    class="btn btn-outline-secondary btn-sm">Abrir</a>
+                <?php if (auth_role() !== 'viewer'): ?>
                 <form method="POST" action="documento_delete.php"
                       onsubmit="return confirm('¿Estas seguro de eliminar este documento?');">
                   <input type="hidden" name="doc_id" value="<?= (int)$doc['id'] ?>">
                   <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
                 </form>
+                <?php endif; ?>
               </div>
             </li>
             <?php endforeach; ?>
@@ -192,11 +198,13 @@ unset($_SESSION['flash']);
           <div class="d-flex gap-2 align-items-center mb-3">
             <a href="<?= htmlspecialchars($id_primary['path']) ?>" target="_blank"
                class="btn btn-outline-secondary btn-sm">Abrir</a>
+            <?php if (auth_role() !== 'viewer'): ?>
             <form method="POST" action="identificacion_delete.php" class="d-inline"
                   onsubmit="return confirm('¿Estas seguro de eliminar esta identificacion?');">
               <input type="hidden" name="doc_id" value="<?= (int)$id_primary['id'] ?>">
               <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
             </form>
+            <?php endif; ?>
           </div>
 
           <?php if (!empty($id_additional)): ?>
@@ -209,11 +217,13 @@ unset($_SESSION['flash']);
                 <div class="d-flex gap-1 flex-shrink-0">
                   <a href="<?= htmlspecialchars($id_doc['path']) ?>" target="_blank"
                      class="btn btn-outline-secondary btn-sm">Abrir</a>
+                  <?php if (auth_role() !== 'viewer'): ?>
                   <form method="POST" action="identificacion_delete.php"
                         onsubmit="return confirm('¿Estas seguro de eliminar esta identificacion?');">
                     <input type="hidden" name="doc_id" value="<?= (int)$id_doc['id'] ?>">
                     <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
                   </form>
+                  <?php endif; ?>
                 </div>
               </li>
               <?php endforeach; ?>

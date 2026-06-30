@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/auth.php';
 auth_require();
+auth_require_role(['admin', 'editor']);
 
 define('UPLOAD_DIR', __DIR__ . '/uploads/');
 

@@ -5,6 +5,7 @@ require_once __DIR__ . '/includes/ocr/PdfFirstPageImageConverter.php';
 require_once __DIR__ . '/includes/ocr/TesseractOcrService.php';
 require_once __DIR__ . '/includes/ocr/RegisterCardTextParser.php';
 auth_require();
+auth_require_role(['admin', 'editor']);
 
 // TODO: move uploads outside the public web root in production.
 define('UPLOAD_DIR',   __DIR__ . '/uploads/');

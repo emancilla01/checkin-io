@@ -6,6 +6,7 @@ require_once __DIR__ . '/includes/ocr/TesseractOcrService.php';
 require_once __DIR__ . '/includes/ocr/RegisterCardTextParser.php';
 auth_require();
 auth_start_session();
+auth_require_role(['admin', 'editor']);
 
 header('Content-Type: application/json');
 

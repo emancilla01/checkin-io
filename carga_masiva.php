@@ -3,6 +3,7 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/auth.php';
 auth_require();
 auth_start_session();
+auth_require_role(['admin', 'editor']);
 ?>
 <!DOCTYPE html>
 <html lang="es">
