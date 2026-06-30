@@ -40,7 +40,7 @@ if (!$doc) {
     exit;
 }
 
-$pdf_abs = __DIR__ . '/' . ltrim($doc['path'], '/\\');
+$pdf_abs = upload_absolute_path($doc['path']);
 if (!file_exists($pdf_abs)) {
     http_response_code(404);
     echo json_encode(['error' => 'Archivo PDF no encontrado en el servidor']);

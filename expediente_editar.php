@@ -4,8 +4,6 @@ require_once __DIR__ . '/includes/auth.php';
 auth_require();
 auth_require_role(['admin', 'editor']);
 
-define('UPLOAD_DIR', __DIR__ . '/uploads/');
-
 if (!is_dir(UPLOAD_DIR)) {
     mkdir(UPLOAD_DIR, 0755, true);
 }

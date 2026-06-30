@@ -7,9 +7,7 @@ require_once __DIR__ . '/includes/ocr/RegisterCardTextParser.php';
 auth_require();
 auth_require_role(['admin', 'editor']);
 
-// TODO: move uploads outside the public web root in production.
-define('UPLOAD_DIR',   __DIR__ . '/uploads/');
-define('OCR_TEMP_DIR', __DIR__ . '/private/uploads-temp/');
+// Uploads now stored outside web root; UPLOAD_DIR and OCR_TEMP_DIR defined in includes/db.php.
 
 foreach ([UPLOAD_DIR, OCR_TEMP_DIR] as $dir) {
     if (!is_dir($dir)) mkdir($dir, 0755, true);

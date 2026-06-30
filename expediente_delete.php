@@ -30,7 +30,7 @@ if (!$exp) {
 $docs = $pdo->prepare("SELECT path FROM documentos WHERE expediente_id = ?");
 $docs->execute([$id]);
 foreach ($docs->fetchAll() as $doc) {
-    $abs = __DIR__ . '/' . ltrim($doc['path'], '/');
+    $abs = upload_absolute_path($doc['path']);
     if (file_exists($abs)) {
         unlink($abs);
     }
@@ -38,7 +38,7 @@ foreach ($docs->fetchAll() as $doc) {
 
 // Delete identificacion file from disk
 if (!empty($exp['identificacion_path'])) {
-    $abs = __DIR__ . '/' . ltrim($exp['identificacion_path'], '/');
+    $abs = upload_absolute_path($exp['identificacion_path']);
     if (file_exists($abs)) {
         unlink($abs);
     }

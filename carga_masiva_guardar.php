@@ -22,7 +22,6 @@ if (!is_array($rows) || empty($rows)) {
     exit;
 }
 
-define('UPLOAD_DIR', __DIR__ . '/uploads/');
 if (!is_dir(UPLOAD_DIR)) mkdir(UPLOAD_DIR, 0755, true);
 
 function cmg_sanitize(string $name): string {

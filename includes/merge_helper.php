@@ -10,9 +10,7 @@
 // Returns on success: redirects (calls header() + exit)
 // Returns on failure: string error message
 
-if (!defined('UPLOAD_DIR')) {
-    define('UPLOAD_DIR', __DIR__ . '/../uploads/');
-}
+// UPLOAD_DIR defined centrally in includes/db.php
 
 const TIER_FILES = [
     'club'           => 'club.pdf',
@@ -57,7 +55,6 @@ function perform_group_merge(
         return 'No hay tarjetas de registro cargadas para combinar.';
     }
 
-    $root          = dirname(__DIR__);
     $pdfs_to_merge = [];
 
     // (a) Recognition tier PDF
@@ -71,7 +68,7 @@ function perform_group_merge(
 
     // (b) All unmerged docs (primary's first, then redundant expedientes', each in upload order)
     foreach ($all_docs as $doc) {
-        $doc_path = $root . '/' . ltrim($doc['path'], '/\\');
+        $doc_path = upload_absolute_path($doc['path']);
         if (!file_exists($doc_path)) {
             return 'Archivo de documento no encontrado: ' . htmlspecialchars(basename($doc['path'])) . '.';
         }
@@ -154,14 +151,14 @@ function perform_group_merge(
 
         // Unlink original doc files from disk
         foreach ($all_docs as $doc) {
-            $disk_path = $root . '/' . ltrim($doc['path'], '/\\');
+            $disk_path = upload_absolute_path($doc['path']);
             if (file_exists($disk_path)) @unlink($disk_path);
         }
 
         // Unlink redundant expediente identificacion files
         foreach ($redundant_id_paths as $id_path) {
             if (!empty($id_path)) {
-                $abs = $root . '/' . ltrim($id_path, '/\\');
+                $abs = upload_absolute_path($id_path);
                 if (file_exists($abs)) @unlink($abs);
             }
         }
@@ -192,7 +189,6 @@ function perform_merge(PDO $pdo, array $exp, array $unmerged_docs, string $nivel
         return 'No hay tarjeta de registro cargada para combinar.';
     }
 
-    $root = dirname(__DIR__);
     $pdfs_to_merge = [];
 
     // (a) Recognition tier PDF
@@ -207,7 +203,7 @@ function perform_merge(PDO $pdo, array $exp, array $unmerged_docs, string $nivel
 
     // (b) Unmerged documentos in upload order
     foreach ($unmerged_docs as $doc) {
-        $doc_path = $root . '/' . ltrim($doc['path'], '/\\');
+        $doc_path = upload_absolute_path($doc['path']);
         if (!file_exists($doc_path)) {
             return 'Archivo de documento no encontrado: ' . htmlspecialchars(basename($doc['path'])) . '.';
         }
@@ -276,7 +272,7 @@ function perform_merge(PDO $pdo, array $exp, array $unmerged_docs, string $nivel
 
         // Delete originals from disk after successful DB commit
         foreach ($unmerged_docs as $doc) {
-            $disk_path = $root . '/' . ltrim($doc['path'], '/\\');
+            $disk_path = upload_absolute_path($doc['path']);
             if (file_exists($disk_path)) @unlink($disk_path);
         }
 

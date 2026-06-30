@@ -12,3 +12,10 @@ $pdo = new PDO(
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]
 );
+
+define('UPLOAD_DIR',     $uploadDir);
+define('OCR_TEMP_DIR',   $uploadTempDir);
+
+function upload_absolute_path(string $stored_path): string {
+    return UPLOAD_DIR . basename($stored_path);
+}

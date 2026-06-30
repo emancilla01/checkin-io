@@ -29,7 +29,7 @@ if (!$doc) {
 $expediente_id = (int)$doc['expediente_id'];
 
 // Delete physical file from disk
-$abs = __DIR__ . '/' . ltrim($doc['path'], '/\\');
+$abs = upload_absolute_path($doc['path']);
 if (file_exists($abs)) {
     unlink($abs);
 }

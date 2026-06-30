@@ -16,7 +16,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-define('OCR_TEMP_DIR', __DIR__ . '/private/uploads-temp/');
 if (!is_dir(OCR_TEMP_DIR)) mkdir(OCR_TEMP_DIR, 0755, true);
 
 function cm_sanitize(string $name): string {
