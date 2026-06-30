@@ -13,6 +13,7 @@ $active_nav = $active_nav ?? '';
     <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
     <a class="nav-link <?= $active_nav === 'usuarios' ? 'active' : '' ?>" href="usuarios.php">Usuarios</a>
     <?php endif; ?>
+    <a class="nav-link <?= $active_nav === 'cambiar-password' ? 'active' : '' ?>" href="cambiar_password.php">Cambiar contrasena</a>
     <a class="nav-link" href="logout.php">Cerrar sesion</a>
   </div>
 </nav>
