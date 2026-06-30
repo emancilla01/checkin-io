@@ -2,8 +2,8 @@
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/auth.php';
 auth_require();
-// branched off to first version of the app, so we can test new features without affecting the main version. 
-// has everything from v1. still needs signature capture, user management, and other features.
+// first complete version set for production on 30/06/2026
+// next version will include id capture via ipad camera
 // --- Search ---
 $search = trim($_GET['search'] ?? '');
 
@@ -127,7 +127,7 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
 
   <!-- Heading row -->
   <div class="io-page-header">
-    <h1>Llegadas de hoy (TEST VERSION)</h1>
+    <h1>Llegadas de hoy</h1>
     <a href="registro_nuevo.php" class="btn btn-io-blue btn-sm">Agregar registro</a>
   </div>
 
