@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
   </div>
 
-  <div class="io-card" style="max-width:640px;">
+  <div class="io-card">
 
     <?php if (!empty($errors)): ?>
       <div class="alert alert-danger">
@@ -155,40 +155,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form method="POST" action="expediente_editar.php" enctype="multipart/form-data">
       <input type="hidden" name="id" value="<?= $id ?>">
 
-      <div class="mb-3">
-        <label for="apellido" class="form-label">Apellido <span class="text-danger">*</span></label>
-        <input type="text" id="apellido" name="apellido" class="form-control"
-               maxlength="255" required
-               value="<?= htmlspecialchars($old['apellido']) ?>">
+      <!-- Row 1: Apellido | Nombre -->
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6">
+          <label for="apellido" class="form-label">Apellido <span class="text-danger">*</span></label>
+          <input type="text" id="apellido" name="apellido" class="form-control"
+                 maxlength="255" required
+                 value="<?= htmlspecialchars($old['apellido']) ?>">
+        </div>
+        <div class="col-12 col-md-6">
+          <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
+          <input type="text" id="nombre" name="nombre" class="form-control"
+                 maxlength="255" required
+                 value="<?= htmlspecialchars($old['nombre']) ?>">
+        </div>
       </div>
 
-      <div class="mb-3">
-        <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
-        <input type="text" id="nombre" name="nombre" class="form-control"
-               maxlength="255" required
-               value="<?= htmlspecialchars($old['nombre']) ?>">
+      <!-- Row 2: Fecha de llegada | CRS No | Habitacion -->
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-4">
+          <label for="fecha_llegada" class="form-label">Fecha de llegada <span class="text-danger">*</span></label>
+          <input type="date" id="fecha_llegada" name="fecha_llegada" class="form-control"
+                 required value="<?= htmlspecialchars($old['fecha_llegada']) ?>">
+        </div>
+        <div class="col-12 col-md-4">
+          <label for="crs_no" class="form-label">CRS No</label>
+          <input type="text" id="crs_no" name="crs_no" class="form-control"
+                 maxlength="50"
+                 value="<?= htmlspecialchars($old['crs_no']) ?>">
+        </div>
+        <div class="col-12 col-md-4">
+          <label for="habitacion" class="form-label">Habitacion</label>
+          <input type="text" id="habitacion" name="habitacion" class="form-control"
+                 maxlength="20"
+                 value="<?= htmlspecialchars($old['habitacion']) ?>">
+        </div>
       </div>
 
-      <div class="mb-3">
-        <label for="fecha_llegada" class="form-label">Fecha de llegada <span class="text-danger">*</span></label>
-        <input type="date" id="fecha_llegada" name="fecha_llegada" class="form-control"
-               required value="<?= htmlspecialchars($old['fecha_llegada']) ?>">
-      </div>
-
-      <div class="mb-3">
-        <label for="crs_no" class="form-label">CRS No</label>
-        <input type="text" id="crs_no" name="crs_no" class="form-control"
-               maxlength="50"
-               value="<?= htmlspecialchars($old['crs_no']) ?>">
-      </div>
-
-      <div class="mb-3">
-        <label for="habitacion" class="form-label">Habitacion</label>
-        <input type="text" id="habitacion" name="habitacion" class="form-control"
-               maxlength="20"
-               value="<?= htmlspecialchars($old['habitacion']) ?>">
-      </div>
-
+      <!-- Row 3: Documento PDF (full width) -->
       <div class="mb-3">
         <label class="form-label">Agregar documento PDF</label>
         <input type="file" id="documento" name="documento"
@@ -209,6 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
       </div>
 
+      <!-- Row 4: Identificacion (full width) -->
       <div class="mb-4">
         <label class="form-label">Agregar identificacion</label>
         <input type="file" id="identificacion" name="identificacion"

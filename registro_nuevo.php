@@ -219,50 +219,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['_action'] ?? '') === 'save
     <h1>Agregar registro</h1>
   </div>
 
-  <div class="io-card" style="max-width:640px;">
+  <!-- Card 1: OCR upload -->
+  <div class="io-card mb-3">
+    <h6 class="fw-semibold mb-1" style="color:var(--io-navy);">Tarjeta de registro (OCR)</h6>
+    <p class="text-muted mb-3" style="font-size:0.875rem;">
+      Sube el PDF de la tarjeta de registro para pre-llenar los campos automaticamente.
+      <?php if ($ocr_done): ?>
+        <span class="text-success fw-semibold">Datos extraidos — revisa y corrige antes de guardar.</span>
+      <?php endif; ?>
+    </p>
 
-    <!-- ================================================ -->
-    <!-- STEP 1: OCR upload -->
-    <!-- ================================================ -->
-    <div class="mb-4 pb-4 border-bottom">
-      <h6 class="fw-semibold mb-1" style="color:var(--io-navy);">Tarjeta de registro (OCR)</h6>
-      <p class="text-muted mb-3" style="font-size:0.875rem;">
-        Sube el PDF de la tarjeta de registro para pre-llenar los campos automaticamente.
-        <?php if ($ocr_done): ?>
-          <span class="text-success fw-semibold">Datos extraidos — revisa y corrige antes de guardar.</span>
-        <?php endif; ?>
+    <?php if ($ocr_error !== ''): ?>
+      <div class="alert alert-warning py-2" style="font-size:0.875rem;"><?= $ocr_error ?></div>
+    <?php endif; ?>
+
+    <form method="POST" action="registro_nuevo.php" enctype="multipart/form-data">
+      <input type="hidden" name="_action" value="ocr">
+
+      <div class="io-upload-box mb-2"
+           data-upload-box
+           data-upload-input="#reg_card_input"
+           tabindex="0" role="button" aria-label="Subir tarjeta de registro PDF">
+        <span data-upload-filename>Arrastra el archivo aqui o haz clic para seleccionar</span>
+        <input type="file" id="reg_card_input" name="reg_card"
+               accept="application/pdf" required style="display:none;">
+      </div>
+
+      <button type="submit" class="btn btn-outline-secondary btn-sm">Continuar</button>
+    </form>
+
+    <?php if ($ocr_temp_path !== ''): ?>
+      <p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">
+        Archivo cargado: <strong><?= htmlspecialchars(basename($ocr_temp_path)) ?></strong>
+        — se adjuntara al expediente al guardar.
       </p>
+    <?php endif; ?>
+  </div>
 
-      <?php if ($ocr_error !== ''): ?>
-        <div class="alert alert-warning py-2" style="font-size:0.875rem;"><?= $ocr_error ?></div>
-      <?php endif; ?>
+  <!-- Card 2: Main form -->
+  <div class="io-card">
 
-      <form method="POST" action="registro_nuevo.php" enctype="multipart/form-data">
-        <input type="hidden" name="_action" value="ocr">
-
-        <div class="io-upload-box mb-2"
-             data-upload-box
-             data-upload-input="#reg_card_input"
-             tabindex="0" role="button" aria-label="Subir tarjeta de registro PDF">
-          <span data-upload-filename>Arrastra el archivo aqui o haz clic para seleccionar</span>
-          <input type="file" id="reg_card_input" name="reg_card"
-                 accept="application/pdf" required style="display:none;">
-        </div>
-
-        <button type="submit" class="btn btn-outline-secondary btn-sm">Continuar</button>
-      </form>
-
-      <?php if ($ocr_temp_path !== ''): ?>
-        <p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">
-          Archivo cargado: <strong><?= htmlspecialchars(basename($ocr_temp_path)) ?></strong>
-          — se adjuntara al expediente al guardar.
-        </p>
-      <?php endif; ?>
-    </div>
-
-    <!-- ================================================ -->
-    <!-- STEP 2: Main form -->
-    <!-- ================================================ -->
     <?php if (!empty($errors)): ?>
       <div class="alert alert-danger">
         <ul class="mb-0">
@@ -278,33 +274,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['_action'] ?? '') === 'save
       <!-- Pass temp PDF path through the form so Guardar knows what to attach -->
       <input type="hidden" name="ocr_temp_path" value="<?= htmlspecialchars($ocr_temp_path) ?>">
 
-      <div class="mb-3">
-        <label for="apellido" class="form-label">Apellido <span class="text-danger">*</span></label>
-        <input type="text" id="apellido" name="apellido" class="form-control"
-               maxlength="255" required
-               value="<?= htmlspecialchars($old['apellido']) ?>">
+      <!-- Row 1: Apellido | Nombre -->
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-6">
+          <label for="apellido" class="form-label">Apellido <span class="text-danger">*</span></label>
+          <input type="text" id="apellido" name="apellido" class="form-control"
+                 maxlength="255" required
+                 value="<?= htmlspecialchars($old['apellido']) ?>">
+        </div>
+        <div class="col-12 col-md-6">
+          <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
+          <input type="text" id="nombre" name="nombre" class="form-control"
+                 maxlength="255" required
+                 value="<?= htmlspecialchars($old['nombre']) ?>">
+        </div>
       </div>
 
-      <div class="mb-3">
-        <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
-        <input type="text" id="nombre" name="nombre" class="form-control"
-               maxlength="255" required
-               value="<?= htmlspecialchars($old['nombre']) ?>">
+      <!-- Row 2: Fecha de llegada | CRS No -->
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-4">
+          <label for="fecha_llegada" class="form-label">Fecha de llegada <span class="text-danger">*</span></label>
+          <input type="date" id="fecha_llegada" name="fecha_llegada" class="form-control"
+                 required value="<?= htmlspecialchars($old['fecha_llegada']) ?>">
+        </div>
+        <div class="col-12 col-md-4">
+          <label for="crs_no" class="form-label">CRS No</label>
+          <input type="text" id="crs_no" name="crs_no" class="form-control"
+                 maxlength="50"
+                 value="<?= htmlspecialchars($old['crs_no']) ?>">
+        </div>
       </div>
 
-      <div class="mb-3">
-        <label for="fecha_llegada" class="form-label">Fecha de llegada <span class="text-danger">*</span></label>
-        <input type="date" id="fecha_llegada" name="fecha_llegada" class="form-control"
-               required value="<?= htmlspecialchars($old['fecha_llegada']) ?>">
-      </div>
-
-      <div class="mb-3">
-        <label for="crs_no" class="form-label">CRS No</label>
-        <input type="text" id="crs_no" name="crs_no" class="form-control"
-               maxlength="50"
-               value="<?= htmlspecialchars($old['crs_no']) ?>">
-      </div>
-
+      <!-- Row 3: Documento PDF (full width) -->
       <div class="mb-3">
         <label class="form-label">Documento(s) PDF adicionales</label>
         <div class="io-upload-box"
@@ -321,6 +322,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['_action'] ?? '') === 'save
         </div>
       </div>
 
+      <!-- Row 4: Identificacion (full width) -->
       <div class="mb-4">
         <label class="form-label">Identificacion</label>
         <div class="io-upload-box"
