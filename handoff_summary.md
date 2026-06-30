@@ -245,13 +245,40 @@ Flow: `registro_nuevo.php` / `carga_masiva_ocr.php` → `PdfFirstPageImageConver
 - `crs_no` aliases: `['crs no.', 'crs no', 'crs number', 'crs#']`
 - `normaliseDate()` handles DD-MM-YY OPERA card format.
 
+**Binary resolution — production server specifics:**
+- Tesseract: hardcoded to `C:\Program Files\Tesseract-OCR\tesseract.exe` in `TesseractOcrService::resolveBinary()`. Spanish pack at `tessdata\spa.traineddata` → lang selected as `spa+eng`.
+- Poppler/pdftoppm: installed at `C:\poppler-26.02.0\Library\bin\pdftoppm.exe`. This path is hardcoded as a candidate in `PdfFirstPageImageConverter::resolveBinary()`. **Do not rely on PATH for pdftoppm under Apache** — Apache was started before Poppler was added to the system PATH, so its process doesn't inherit it. The hardcoded path is what makes it work.
+- If pdftoppm is ever reinstalled to a different path, update the candidates list in `PdfFirstPageImageConverter::resolveBinary()` or set the `PDFTOPPM_BINARY` env var.
+
+**Error visibility:** the OCR catch block in `registro_nuevo.php` calls `error_log('[IO OCR] ...')` so exceptions appear in `C:\xampp\apache\logs\error.log` even though the user sees only the generic "no pudo extraer" message.
+
 ---
 
 ## 7. Remaining / Known Issues
 
-- **Move uploads/ outside public web root** in production (currently `checkin-io/uploads/` is web-accessible).
+- **Move uploads/ outside public web root** — planned but not yet implemented. Full audit was done (see below); plan is ready to execute.
 - **identificacion_path** column on `expedientes` is a legacy remnant — kept to avoid a schema migration, but nothing writes to it anymore. All ID files now use `documentos` with `is_identificacion=1`.
 - **Signature position** on the merged PDF is tunable in `firma_guardar.php`: currently `x=70, y=(pageHeight−45), w=99` mm on every page. May need further fine-tuning per the actual contract layout.
+
+### Planned: move uploads to `C:\io-data\uploads\`
+
+Audit completed. Current state of path storage:
+
+**Database format:** all paths stored as `uploads/<filename>` (relative, no machine prefix). Examples: `uploads/Morales_Chavez_Carlos_Adrian_290626.pdf`, `uploads/cid_ibarra_roberto_daniel_207.pdf`.
+
+**Write sites** (all use `'uploads/' . basename($dest)` pattern):
+`registro_nuevo.php`, `expediente_editar.php`, `carga_masiva_guardar.php`, `merge_helper.php` (×2 for individual and group merge). Each defines `UPLOAD_DIR` locally as `__DIR__ . '/uploads/'` except merge_helper which uses `__DIR__ . '/../uploads/'`.
+
+**Read/display sites** (`expediente.php`): DB path used **as-is as a web URL** — `href`, `src`, `data-pdf-url` all emit `uploads/filename` directly. Works because `uploads/` is inside the web root.
+
+**Delete/filesystem sites**: `expediente_delete.php`, `documento_delete.php`, `identificacion_delete.php`, `merge_helper.php`, `firma_guardar.php` all reconstruct the absolute path via `__DIR__ . '/' . ltrim($path, '/\\')`.
+
+**Migration plan (minimum changes):**
+1. `config.php`: add `$uploadDir = 'C:\io-data\uploads\\';`
+2. Add Apache Alias: `Alias /checkin-io/uploads C:\io-data\uploads` in `httpd.conf` — this keeps the `uploads/filename` URL format working with zero display-code changes.
+3. All 5 write sites: replace local `UPLOAD_DIR` define with `$uploadDir` from config.
+4. All 5 delete/filesystem sites: replace `__DIR__ . '/' . ltrim($path, '/\\')` with `$uploadDir . basename($path)`.
+5. No DB migration needed — stored format stays `uploads/<filename>`.
 
 ---
 
