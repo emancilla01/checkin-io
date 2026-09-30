@@ -208,7 +208,7 @@ File: `includes/merge_helper.php`. Required by merge.php, merge_masivo.php, merg
 
 **Constants:**
 ```php
-UPLOAD_DIR           // __DIR__ . '/../uploads/'
+UPLOAD_DIR           // defined centrally in includes/db.php → 'C:\io-data\uploads\'
 TIER_FILES           // ['club' => 'club.pdf', 'silver_elite' => ..., ...]
 RECONOCIMIENTO_OPCIONES  // ['' => 'Sin reconocimiento', 'club' => 'Club', ...]
 ```
@@ -256,29 +256,23 @@ Flow: `registro_nuevo.php` / `carga_masiva_ocr.php` → `PdfFirstPageImageConver
 
 ## 7. Remaining / Known Issues
 
-- **Move uploads/ outside public web root** — planned but not yet implemented. Full audit was done (see below); plan is ready to execute.
 - **identificacion_path** column on `expedientes` is a legacy remnant — kept to avoid a schema migration, but nothing writes to it anymore. All ID files now use `documentos` with `is_identificacion=1`.
 - **Signature position** on the merged PDF is tunable in `firma_guardar.php`: currently `x=70, y=(pageHeight−45), w=99` mm on every page. May need further fine-tuning per the actual contract layout.
 
-### Planned: move uploads to `C:\io-data\uploads\`
+### Completed: upload storage migration to `C:\io-data\uploads\`
 
-Audit completed. Current state of path storage:
+Migration fully implemented and verified on production server.
 
-**Database format:** all paths stored as `uploads/<filename>` (relative, no machine prefix). Examples: `uploads/Morales_Chavez_Carlos_Adrian_290626.pdf`, `uploads/cid_ibarra_roberto_daniel_207.pdf`.
+**What was done:**
+1. `config.php`: added `$uploadDir = 'C:\\io-data\\uploads\\'` and `$uploadTempDir = 'C:\\io-data\\uploads-temp\\'`
+2. Apache Alias added to `httpd.conf`: `Alias /checkin-io/uploads "C:/io-data/uploads"` — keeps `uploads/filename` URL format working with zero display-code changes
+3. `includes/db.php`: centralized `define('UPLOAD_DIR', $uploadDir)`, `define('OCR_TEMP_DIR', $uploadTempDir)`, and added `upload_absolute_path(string $stored_path): string` helper
+4. All local `define('UPLOAD_DIR', ...)` removed from: `registro_nuevo.php`, `expediente_editar.php`, `carga_masiva_guardar.php`, `carga_masiva_ocr.php`, `includes/merge_helper.php`
+5. All delete/filesystem path constructions migrated to `upload_absolute_path()` in: `expediente_delete.php`, `documento_delete.php`, `identificacion_delete.php`, `merge_helper.php`, `firma_guardar.php`
 
-**Write sites** (all use `'uploads/' . basename($dest)` pattern):
-`registro_nuevo.php`, `expediente_editar.php`, `carga_masiva_guardar.php`, `merge_helper.php` (×2 for individual and group merge). Each defines `UPLOAD_DIR` locally as `__DIR__ . '/uploads/'` except merge_helper which uses `__DIR__ . '/../uploads/'`.
+**DB format unchanged:** paths still stored as `uploads/<filename>`. `upload_absolute_path()` strips the prefix with `basename()` and prepends `UPLOAD_DIR`.
 
-**Read/display sites** (`expediente.php`): DB path used **as-is as a web URL** — `href`, `src`, `data-pdf-url` all emit `uploads/filename` directly. Works because `uploads/` is inside the web root.
-
-**Delete/filesystem sites**: `expediente_delete.php`, `documento_delete.php`, `identificacion_delete.php`, `merge_helper.php`, `firma_guardar.php` all reconstruct the absolute path via `__DIR__ . '/' . ltrim($path, '/\\')`.
-
-**Migration plan (minimum changes):**
-1. `config.php`: add `$uploadDir = 'C:\io-data\uploads\\';`
-2. Add Apache Alias: `Alias /checkin-io/uploads C:\io-data\uploads` in `httpd.conf` — this keeps the `uploads/filename` URL format working with zero display-code changes.
-3. All 5 write sites: replace local `UPLOAD_DIR` define with `$uploadDir` from config.
-4. All 5 delete/filesystem sites: replace `__DIR__ . '/' . ltrim($path, '/\\')` with `$uploadDir . basename($path)`.
-5. No DB migration needed — stored format stays `uploads/<filename>`.
+**Verified:** individual doc delete and full expediente delete both confirmed hitting `C:\io-data\uploads\` correctly via live PHP CLI test.
 
 ---
 

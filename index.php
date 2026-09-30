@@ -266,11 +266,23 @@ function page_qs(int $p, string $search, ?string $sort, string $direction): stri
           <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
             <a class="page-link" href="?<?= page_qs($page - 1, $search, $sort, $direction) ?>">Anterior</a>
           </li>
-          <?php for ($p = 1; $p <= $total_pages; $p++): ?>
+          <?php
+            $window = 2;
+            $pages_to_show = [];
+            for ($p = 1; $p <= $total_pages; $p++) {
+                if ($p === 1 || $p === $total_pages || ($p >= $page - $window && $p <= $page + $window)) {
+                    $pages_to_show[] = $p;
+                }
+            }
+            $prev = null;
+            foreach ($pages_to_show as $p):
+                if ($prev !== null && $p - $prev > 1): ?>
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+          <?php endif; ?>
           <li class="page-item <?= $p === $page ? 'active' : '' ?>">
             <a class="page-link" href="?<?= page_qs($p, $search, $sort, $direction) ?>"><?= $p ?></a>
           </li>
-          <?php endfor; ?>
+          <?php $prev = $p; endforeach; ?>
           <li class="page-item <?= $page >= $total_pages ? 'disabled' : '' ?>">
             <a class="page-link" href="?<?= page_qs($page + 1, $search, $sort, $direction) ?>">Siguiente</a>
           </li>
