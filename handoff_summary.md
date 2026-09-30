@@ -182,7 +182,7 @@ ALTER TABLE documentos ADD COLUMN is_identificacion TINYINT(1) NOT NULL DEFAULT 
 - Flash messages: stored as `['type' => 'warning'|'success', 'message' => '...']` array. index.php renders `alert-warning` vs `alert-success` accordingly. Old string-format flash still handled for backwards compatibility.
 
 ### Pages & Features
-- **index.php / base_datos.php:** search/sort/paginate, status badges, inline Habitacion edit (AJAX), Firmar button per row.
+- **index.php / base_datos.php:** search/sort/paginate, status badges, inline Habitacion edit (AJAX), Firmar button per row. Paginator is windowed (current ±2, first, last, ellipsis) — does not render all page buttons. Record counter shown top-right of table: "Mostrando X–Y de Z registros". Note: em dash in PHP strings must use `{$var}` curly syntax or PHP will try to parse the dash as part of the variable name.
 - **registro_nuevo.php:** OCR prefill (Step 1 → Step 2), drag-and-drop, full-width grid layout (Apellido|Nombre / Fecha|CRS / uploads).
 - **expediente.php:** PDF.js canvas viewer for merged doc (Safari-compatible). Identificacion card shows first uploaded as inline preview; additional IDs listed with Abrir+Eliminar.
 - **expediente_editar.php:** full-width grid layout matching registro_nuevo.

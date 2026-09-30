@@ -170,6 +170,15 @@ $filters = [
     <?php if (empty($rows)): ?>
       <p class="p-4 mb-0 text-muted">No se encontraron expedientes.</p>
     <?php else: ?>
+    <div class="d-flex justify-content-end align-items-center px-3 pt-2 pb-1">
+      <small class="text-muted">
+        <?php
+          $from = $offset + 1;
+          $to   = min($offset + $per_page, $total);
+          echo "Mostrando {$from}–{$to} de {$total} registro" . ($total !== 1 ? 's' : '');
+        ?>
+      </small>
+    </div>
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
